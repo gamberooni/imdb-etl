@@ -2,7 +2,7 @@ import requests
 import gzip
 import shutil
 import os 
-import minio
+from minio import Minio
 import logging
 
 logging.basicConfig()
@@ -67,3 +67,4 @@ if client.bucket_exists(bucket_name):
 else:
     client.make_bucket(bucket_name)
     logging.info(f"Created bucket '{bucket_name}'")
+    
