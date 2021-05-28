@@ -4,6 +4,8 @@ import shutil
 import os 
 from minio import Minio
 import logging
+import datetime
+import io
 
 logging.basicConfig()
 logging.getLogger().setLevel(logging.INFO)
@@ -19,6 +21,7 @@ def download_file(url):
                 # and set chunk_size parameter to None.
                 #if chunk: 
                 f.write(chunk)
+    logging.info(f"Finished downloading from {url}")
     return local_filename
 
 # def extract_gz(file):
@@ -34,8 +37,10 @@ def download_file(url):
 
 def extract_gz(file):
     with gzip.open(file, 'rb') as f_in:  # unzip and open the .gz file
-        with open(file.split('.gz')[0], 'wb') as f_out:  # open another blank file
+        filename = file.split('.gz')[0]
+        with open(filename, 'wb') as f_out:  # open another blank file
             shutil.copyfileobj(f_in, f_out)  # copy the .gz file contents to the blank file
+    logging.info(f"Finished extracting from {file}")
 
 files_to_dl = [
     "https://datasets.imdbws.com/name.basics.tsv.gz",
@@ -47,12 +52,8 @@ files_to_dl = [
     "https://datasets.imdbws.com/title.ratings.tsv.gz"
 ]
 
-for url in files_to_dl:
-    file = download_file(url)
-    extract_gz(file)
-
 client = Minio(
-    "localhost:9000",
+    "192.168.0.188:9000",
     access_key="admin",
     secret_key="password",
     secure=False,
@@ -67,4 +68,17 @@ if client.bucket_exists(bucket_name):
 else:
     client.make_bucket(bucket_name)
     logging.info(f"Created bucket '{bucket_name}'")
-    
+
+now = datetime.datetime.now()
+yyyy_mm_today = now.strftime("%Y-%m")
+dd_today = now.strftime("%d")
+
+for url in files_to_dl:
+    # file = download_file(url)
+    # extract_gz(file)
+    file = "name.basics.tsv"
+    fbytes = open(file, "rb")
+    result = client.put_object(
+        bucket_name, f"{yyyy_mm_today}/{dd_today}/{file}", fbytes, os.path.getsize(fbytes)
+    )
+    logging.info(f"Finished uploading {file} to MinIO")
