@@ -5,7 +5,7 @@ services:
     image: minio/minio:RELEASE.2021-03-04T00-53-13Z
     container_name: minio
     volumes:
-      - minio-data:/data
+      - minio-volume:/data
     environment:
       - MINIO_ROOT_USER=admin
       - MINIO_ROOT_PASSWORD=password
@@ -16,11 +16,163 @@ services:
       - imdb-etl
     restart: always
 
+  imdb_postgres:
+    image: postgres:12.6-alpine
+    container_name: imdb_postgres
+    volumes:
+      - postgres-volume:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=admin
+      - POSTGRES_DB=imdb
+    ports:
+      - "5433:5432"
+    networks:
+      - imdb-etl
+    restart: always
+    healthcheck:
+      test: pg_isready -U admin -d imdb -h localhost -q
+
+  # Apache Druid stuffs
+  druid_postgres:
+    container_name: druid_postgres
+    image: postgres:12.6-alpine
+    volumes:
+      - metadata_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=druid
+      - POSTGRES_DB=druid
+    ports:
+      - "5434:5432"
+    networks:
+      - imdb-etl
+    restart: always
+    healthcheck:
+      test: pg_isready -U druid -d druid -h localhost -q      
+
+  # Need 3.5 or later for container nodes
+  zookeeper:
+    container_name: zookeeper
+    image: zookeeper:3.5
+    ports:
+      - "2181:2181"
+    environment:
+      - ZOO_MY_ID=1
+    networks:
+      - imdb-etl
+    restart: always      
+
+  coordinator:
+    image: apache/druid:0.22.0
+    container_name: coordinator
+    volumes:
+      - ./storage:/opt/data
+      - coordinator_var:/opt/druid/var
+    depends_on: 
+      - zookeeper
+      - druid_postgres
+    ports:
+      - "8081:8081"
+    command:
+      - coordinator
+    env_file:
+      - environment
+    networks:
+      - imdb-etl
+    restart: always      
+
+  broker:
+    image: apache/druid:0.22.0
+    container_name: broker
+    volumes:
+      - broker_var:/opt/druid/var
+    depends_on: 
+      - zookeeper
+      - druid_postgres
+      - coordinator
+    ports:
+      - "8082:8082"
+    command:
+      - broker
+    env_file:
+      - environment
+    networks:
+      - imdb-etl
+    restart: always            
+
+  historical:
+    image: apache/druid:0.22.0
+    container_name: historical
+    volumes:
+      - ./storage:/opt/data
+      - historical_var:/opt/druid/var
+    depends_on: 
+      - zookeeper
+      - druid_postgres
+      - coordinator
+    ports:
+      - "8083:8083"
+    command:
+      - historical
+    env_file:
+      - environment
+    networks:
+      - imdb-etl
+    restart: always              
+
+  middlemanager:
+    image: apache/druid:0.22.0
+    container_name: middlemanager
+    volumes:
+      - ./storage:/opt/data
+      - middle_var:/opt/druid/var
+    depends_on: 
+      - zookeeper
+      - druid_postgres
+      - coordinator
+    ports:
+      - "8091:8091"
+      - "8100-8105:8100-8105"
+    command:
+      - middleManager
+    env_file:
+      - environment
+    networks:
+      - imdb-etl
+    restart: always              
+
+  router:
+    image: apache/druid:0.22.0
+    container_name: router
+    volumes:
+      - router_var:/opt/druid/var
+    depends_on:
+      - zookeeper
+      - druid_postgres
+      - coordinator
+    ports:
+      - "8888:8888"
+    command:
+      - router
+    env_file:
+      - environment
+    networks:
+      - imdb-etl
+    restart: always              
+
 networks:
   imdb-etl:
     external:
       name: imdb-etl
 
 volumes:
-  minio-data:
-  
+  minio-volume:
+  postgres-volume:
+  # druid volumes
+  metadata_data:
+  middle_var:
+  historical_var:
+  broker_var:
+  coordinator_var:
+  router_var:
