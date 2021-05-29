@@ -5,9 +5,13 @@ import os
 from minio import Minio
 import logging
 import datetime
+from time import sleep
 
-logging.basicConfig()
-logging.getLogger().setLevel(logging.INFO)
+logging.basicConfig(
+    format='%(levelname)s: %(asctime)s - %(message)s', 
+    datefmt='%d-%b-%y %H:%M:%S', 
+    level=logging.INFO
+    )
 
 def download_file(url):
     logging.info(f"Downloading from {url}...")
@@ -24,23 +28,30 @@ def download_file(url):
     logging.info(f"Finished downloading from {url}")
     return local_filename
 
-# def extract_gz(file):
-#     try:
-#         for file in os.listdir(os.getcwd()):  # list all files in the directory
-#             if file.endswith(".gz"):  # if .gz extension
-#                 with gzip.open(file, 'rb') as f_in:  # unzip and open the .gz file
-#                     with open(file.split('.gz')[0], 'wb') as f_out:  # open another blank file
-#                         shutil.copyfileobj(f_in, f_out)  # copy the .gz file contents to the blank file
-#         return True
-#     except:
-#         return False
-
-def extract_gz(file):
+def unzip_gz(file):
     with gzip.open(file, 'rb') as f_in:  # unzip and open the .gz file
         filename = file.split('.gz')[0]
         with open(filename, 'wb') as f_out:  # open another blank file
             shutil.copyfileobj(f_in, f_out)  # copy the .gz file contents to the blank file
-    logging.info(f"Finished extracting from {file}")
+    logging.info(f"Finished unzipping {file}. Output is {filename}")
+    return filename
+
+def remove_file(filename):
+    counter = 0
+    while 1:
+        # try for 5 times only      
+        if counter > 4:
+            return False
+        else:
+            counter += 1
+
+        try:
+            os.remove(filename)
+            logging.info(f"Deleted file {filename}")
+            return True
+        except OSError:
+            logging.error(f"Unable to delete file {filename}. File is still being used by another process.")
+            sleep(5)  
 
 files_to_dl = [
     "https://datasets.imdbws.com/name.basics.tsv.gz",
@@ -74,11 +85,16 @@ yyyy_mm_today = now.strftime("%Y-%m")
 dd_today = now.strftime("%d")
 
 for url in files_to_dl:
-    file = download_file(url)
-    extract_gz(file)
-    # file = "name.basics.tsv"
-    fbytes = open(file, "rb")
+    gz_file = download_file(url)
+    tsv_file = unzip_gz(gz_file)
+    fbytes = open(tsv_file, "rb")  # open file and read as bytes
+    # upload the opened file to minio
     result = client.put_object(
-        bucket_name, f"{yyyy_mm_today}/{dd_today}/{file}", fbytes, os.path.getsize(fbytes)
+        bucket_name, f"{yyyy_mm_today}/{dd_today}/{tsv_file}", fbytes, os.path.getsize(tsv_file)
     )
-    logging.info(f"Finished uploading {file} to MinIO")
+    logging.info(f"Finished uploading {tsv_file} to MinIO")
+    fbytes.close()  # close file after finish uploading
+
+    ret = remove_file(gz_file)
+    ret = remove_file(tsv_file)
+    
