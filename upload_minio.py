@@ -6,6 +6,7 @@ from minio import Minio
 import logging
 import datetime
 from time import sleep
+from conf import *
 
 logging.basicConfig(
     format='%(levelname)s: %(asctime)s - %(message)s', 
@@ -36,7 +37,7 @@ def unzip_gz(file):
     logging.info(f"Finished unzipping {file}. Output is {filename}")
     return filename
 
-def remove_file(filename):
+def remove_local_file(filename):
     counter = 0
     while 1:
         # try for 5 times only      
@@ -53,32 +54,20 @@ def remove_file(filename):
             logging.error(f"Unable to delete file {filename}. File is still being used by another process.")
             sleep(5)  
 
-files_to_dl = [
-    "https://datasets.imdbws.com/name.basics.tsv.gz",
-    "https://datasets.imdbws.com/title.akas.tsv.gz",
-    "https://datasets.imdbws.com/title.basics.tsv.gz",
-    "https://datasets.imdbws.com/title.crew.tsv.gz",
-    "https://datasets.imdbws.com/title.episode.tsv.gz",
-    "https://datasets.imdbws.com/title.principals.tsv.gz",
-    "https://datasets.imdbws.com/title.ratings.tsv.gz"
-]
-
 client = Minio(
-    "192.168.0.188:9000",
-    access_key="admin",
-    secret_key="password",
+    MINIO_HOST,
+    access_key=MINIO_ACCESS_KEY,
+    secret_key=MINIO_SECRET_KEY,
     secure=False,
 )
 
-bucket_name = "imdb-data"
-
 # create the bucket if not exists
-if client.bucket_exists(bucket_name):
-    logging.info(f"Bucket '{bucket_name}' already exists.")
+if client.bucket_exists(BUCKET_NAME):
+    logging.info(f"Bucket '{BUCKET_NAME}' already exists.")
     logging.info("Not creating new bucket.")
 else:
-    client.make_bucket(bucket_name)
-    logging.info(f"Created bucket '{bucket_name}'")
+    client.make_bucket(BUCKET_NAME)
+    logging.info(f"Created bucket '{BUCKET_NAME}'")
 
 now = datetime.datetime.now()
 yyyy_mm_today = now.strftime("%Y-%m")
@@ -90,11 +79,11 @@ for url in files_to_dl:
     fbytes = open(tsv_file, "rb")  # open file and read as bytes
     # upload the opened file to minio
     result = client.put_object(
-        bucket_name, f"{yyyy_mm_today}/{dd_today}/{tsv_file}", fbytes, os.path.getsize(tsv_file)
+        BUCKET_NAME, f"{yyyy_mm_today}/{dd_today}/{tsv_file}", fbytes, os.path.getsize(tsv_file)
     )
     logging.info(f"Finished uploading {tsv_file} to MinIO")
     fbytes.close()  # close file after finish uploading
 
-    ret = remove_file(gz_file)
-    ret = remove_file(tsv_file)
+    ret = remove_local_file(gz_file)
+    ret = remove_local_file(tsv_file)
     
