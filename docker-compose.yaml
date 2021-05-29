@@ -1,5 +1,13 @@
 version: '3.5'
 
+x-redash-service: &redash-service
+  image: redash/redash:8.0.0.b32245
+  depends_on:
+    - redash_postgres
+    - redash_redis
+  env_file: environment
+  restart: always
+
 services:
   minio:
     image: minio/minio:RELEASE.2021-03-04T00-53-13Z
@@ -33,6 +41,110 @@ services:
     healthcheck:
       test: pg_isready -U admin -d imdb -h localhost -q
  
+  # clickhouse
+
+  ch_server:
+    image: yandex/clickhouse-server
+    container_name: ch_server
+    ports:
+      - "8123:8123"
+    volumes:
+      - ch-server-volume:/var/lib/clickhouse
+    networks:
+      - imdb-etl
+    restart: always
+
+  ch_client:
+    image: yandex/clickhouse-client
+    container_name: ch_client
+    entrypoint:
+      - /bin/sleep
+    command:
+      - infinity
+    networks:
+      - imdb-etl
+    restart: always
+
+  # redash
+
+  redash:
+    <<: *redash-service
+    container_name: redash
+    command: server
+    ports:
+      - "5000:5000"
+    environment:
+      REDASH_WEB_WORKERS: 4
+    networks:
+      - imdb-etl      
+
+  redash_scheduler:
+    <<: *redash-service
+    container_name: redash_scheduler
+    command: scheduler
+    environment:
+      QUEUES: "celery"
+      WORKERS_COUNT: 1
+    networks:
+      - imdb-etl      
+
+  redash_scheduled_worker:
+    <<: *redash-service
+    container_name: redash_scheduled_worker
+    command: worker
+    environment:
+      QUEUES: "scheduled_queries,schemas"
+      WORKERS_COUNT: 1
+    networks:
+      - imdb-etl      
+
+  redash_adhoc_worker:
+    <<: *redash-service
+    container_name: redash_adhoc_worker
+    command: worker
+    environment:
+      QUEUES: "queries"
+      WORKERS_COUNT: 2
+    networks:
+      - imdb-etl      
+
+  redash_redis:
+    image: redis:5.0-alpine
+    container_name: redash_redis
+    restart: always
+    networks:
+      - imdb-etl    
+
+  redash_postgres:
+    image: postgres:12.6-alpine
+    container_name: redash_postgres
+    env_file: environment
+    volumes:
+      - redash-postgres-volume:/var/lib/postgresql/data
+    restart: always
+    ports:
+      - 5434:5432
+    environment: 
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=redash
+      - POSTGRES_DB=redash
+    networks:
+      - imdb-etl      
+    healthcheck:
+      test: pg_isready -U redash -d redash -h localhost -q
+
+  redash_nginx:
+    container_name: redash_nginx
+    image: redash/nginx:latest
+    env_file: environment
+    ports:
+      - "80:80"
+    depends_on:
+      - redash
+    restart: always
+    networks:
+      - imdb-etl    
+
 networks:
   imdb-etl:
     external:
@@ -41,3 +153,5 @@ networks:
 volumes:
   minio-volume:
   postgres-volume:
+  ch-server-volume:
+  redash-postgres-volume:

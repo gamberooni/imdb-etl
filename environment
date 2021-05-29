@@ -1,0 +1,7 @@
+REDASH_HOST=http://redash:5000
+REDASH_LOG_LEVEL=DEBUG
+REDASH_REDIS_URL=redis://redash_redis:6379/0
+REDASH_DATABASE_URL=postgresql://redash:password@redash_postgres/redash
+REDASH_COOKIE_SECRET=8EsdKSA3cjuaGSDkyMUPX5eF9zUqyjKk
+REDASH_SECRET_KEY=oBOfnYWEg5jpR8k1yQcz7PXv9YlJBblR
+PYTHONUNBUFFERED=0

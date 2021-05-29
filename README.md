@@ -8,5 +8,11 @@
 5. Push transformed data into OLAP database
 6. Create visualizations
 
+## docker-compose
+1. Create redash db
+> docker-compose run --rm redash create_db
+2. Create all the containers
+> docker-compose up -d 
+
 - unit testing 
 - metrics monitoring
