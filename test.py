@@ -5,12 +5,12 @@ import os
 from minio import Minio
 import logging
 import datetime
-import io
 
 logging.basicConfig()
 logging.getLogger().setLevel(logging.INFO)
 
 def download_file(url):
+    logging.info(f"Downloading from {url}...")
     local_filename = url.split('/')[-1]
     # NOTE the stream=True parameter below
     with requests.get(url, stream=True) as r:
@@ -74,9 +74,9 @@ yyyy_mm_today = now.strftime("%Y-%m")
 dd_today = now.strftime("%d")
 
 for url in files_to_dl:
-    # file = download_file(url)
-    # extract_gz(file)
-    file = "name.basics.tsv"
+    file = download_file(url)
+    extract_gz(file)
+    # file = "name.basics.tsv"
     fbytes = open(file, "rb")
     result = client.put_object(
         bucket_name, f"{yyyy_mm_today}/{dd_today}/{file}", fbytes, os.path.getsize(fbytes)
