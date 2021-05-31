@@ -8,11 +8,11 @@ import datetime
 from time import sleep
 from conf import *
 
-# logging.basicConfig(
-#     format='%(levelname)s: %(asctime)s - %(message)s', 
-#     datefmt='%d-%b-%y %H:%M:%S', 
-#     level=logging.INFO
-#     )
+logging.basicConfig(
+    format='%(levelname)s: %(asctime)s - %(message)s', 
+    datefmt='%d-%b-%y %H:%M:%S', 
+    level=logging.INFO
+    )
 
 def download_file(url):
     logging.info(f"Downloading from {url}...")
@@ -85,5 +85,5 @@ for url in files_to_dl:
     fbytes.close()  # close file after finish uploading
 
     ret = remove_local_file(gz_file)
-    ret = remove_local_file(tsv_file)
+    #ret = remove_local_file(tsv_file)
     

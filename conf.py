@@ -3,8 +3,7 @@ import os
 BUCKET_NAME = os.getenv('BUCKET_NAME', "imdb")
 MINIO_ACCESS_KEY = os.getenv('MINIO_ACCESS_KEY', "admin") 
 MINIO_SECRET_KEY = os.getenv('MINIO_SECRET_KEY', "password") 
-MINIO_HOST = os.getenv('MINIO_HOST', "localhost") 
-MINIO_PORT = os.getenv('MINIO_PORT', "9000")
+MINIO_HOST = os.getenv('MINIO_HOST', "localhost:9000") 
 
 POSTGRES_USER = os.getenv('POSTGRES_USER', "admin")
 POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD', "password") 
