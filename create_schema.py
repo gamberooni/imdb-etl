@@ -25,7 +25,7 @@ logging.info(f"Dropped schema '{SCHEMA_NAME}'")
 cursor.execute(create_schema_sql)  
 logging.info(f"Created schema '{SCHEMA_NAME}'")
 conn.commit()
-
+# create tables
 for create_table in create_tables_sql:
     cursor.execute(create_table)
 conn.commit()
