@@ -8,11 +8,11 @@ import datetime
 from time import sleep
 from conf import *
 
-logging.basicConfig(
-    format='%(levelname)s: %(asctime)s - %(message)s', 
-    datefmt='%d-%b-%y %H:%M:%S', 
-    level=logging.INFO
-    )
+# logging.basicConfig(
+#     format='%(levelname)s: %(asctime)s - %(message)s', 
+#     datefmt='%d-%b-%y %H:%M:%S', 
+#     level=logging.INFO
+#     )
 
 def download_file(url):
     logging.info(f"Downloading from {url}...")
