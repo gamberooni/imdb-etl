@@ -11,12 +11,13 @@ logging.basicConfig(
     level=logging.INFO
     )
 
-def create_conn(conn_id, conn_type, host, login, password, port=None, extra=None):
+def create_conn(conn_id, conn_type, host, login, password, port=None, schema=None, extra=None):
     conn = Connection(
         conn_id=conn_id,
         conn_type=conn_type,
         host=host,
         port=port,
+        schema=schema,
         password=password,
         login=login,
         extra=extra
@@ -36,7 +37,7 @@ def create_conn(conn_id, conn_type, host, login, password, port=None, extra=None
     logging.info(f'Connection {conn_id} is created')
 
 with DAG(
-    dag_id='create_connections',
+    dag_id='create_connections_dag',
     schedule_interval=None,
     start_date=days_ago(2),
     max_active_runs=1,
@@ -65,6 +66,7 @@ with DAG(
             "host": "imdb_postgres",
             "login": "admin",
             "password": "password",
+            "schema": "imdb",
             "port": 5432,
         },
     )    
