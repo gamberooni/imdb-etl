@@ -14,5 +14,9 @@
 2. Create all the containers
 > docker-compose up -d 
 
+## Visit Airflow Web UI 
+- Go to localhost:8080 - username: airflow, password: airflow
+
 - unit testing 
 - metrics monitoring
+- use delta lake?
