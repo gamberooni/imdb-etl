@@ -12,7 +12,7 @@ import gzip
 import shutil
 import datetime
 
-BUCKET_NAME = os.environ.get('BUCKET_NAME', 'test-bucket')
+BUCKET_NAME = os.environ.get('BUCKET_NAME', 'imdb')
 IMDB_DATASETS_BASE_URL = os.environ.get('IMDB_DATASETS_BASE_URL', 'https://datasets.imdbws.com/')
 
 now = datetime.datetime.now()

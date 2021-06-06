@@ -1,13 +1,12 @@
 import datetime
 from airflow import DAG
 from airflow.providers.postgres.operators.postgres import PostgresOperator
-from airflow.operators.dummy import DummyOperator
-from airflow.utils.trigger_rule import TriggerRule
+import os
 
 default_args = {"owner": "airflow"}
 
 with DAG(
-    dag_id="create_tables_dag",
+    dag_id="create_tables",
     start_date=datetime.datetime(2020, 2, 2),
     schedule_interval="@once",
     default_args=default_args,
@@ -16,7 +15,7 @@ with DAG(
 ) as dag:
 
     create_dim_download_date_table = PostgresOperator(
-        task_id="create_pet_table",
+        task_id="create_dim_download_date_table",
         postgres_conn_id="imdb_postgres",
         sql="""
         CREATE TABLE IF NOT EXISTS dim_download_date (
@@ -184,16 +183,31 @@ with DAG(
         ADD CONSTRAINT titles_genres_title_id_fkey FOREIGN KEY (title_id)
         REFERENCES fact_titles (id);
         """,
-    )                
+    )                  
 
-    wait = DummyOperator(task_id="wait", trigger_rule=TriggerRule.ALL_DONE)                                                      
+    drop_schema = PostgresOperator(
+        task_id="drop_schema",
+        postgres_conn_id="imdb_postgres",
+        sql="""
+        DROP SCHEMA IF EXISTS public CASCADE;
+        """,
+    )                                                 
 
-    create_dim_title_desc_table >> wait
-    create_dim_download_date_table >> wait
-    create_dim_episode_table >> wait 
-    create_dim_genres_table >> create_titles_genres_table >> wait
-    create_dim_crew_table >> create_titles_crew_table >> wait
-    create_dim_casts_table >> create_titles_casts_table >> wait
-    create_dim_ratings_table >> wait
+    create_schema = PostgresOperator(
+        task_id="create_schema",
+        postgres_conn_id="imdb_postgres",
+        sql="""
+        CREATE SCHEMA IF NOT EXISTS public;
+        """,
+    )   
+
+    drop_schema >> create_schema
+    create_schema >> create_dim_title_desc_table >> create_fact_titles_table
+    create_schema >> create_dim_download_date_table >> create_fact_titles_table
+    create_schema >> create_dim_episode_table >> create_fact_titles_table 
+    create_schema >> create_dim_genres_table >> create_titles_genres_table >> create_fact_titles_table
+    create_schema >> create_dim_crew_table >> create_titles_crew_table >> create_fact_titles_table
+    create_schema >> create_dim_casts_table >> create_titles_casts_table >> create_fact_titles_table
+    create_schema >> create_dim_ratings_table >> create_fact_titles_table
     
-    wait >> create_fact_titles_table >> set_fkey
+    create_fact_titles_table >> set_fkey

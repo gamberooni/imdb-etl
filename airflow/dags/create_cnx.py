@@ -37,7 +37,7 @@ def create_conn(conn_id, conn_type, host, login, password, port=None, schema=Non
     logging.info(f'Connection {conn_id} is created')
 
 with DAG(
-    dag_id='create_connections_dag',
+    dag_id='create_connections',
     schedule_interval=None,
     start_date=days_ago(2),
     max_active_runs=1,
