@@ -38,6 +38,12 @@ master = "spark://zy-ubuntu:7077"
 os.environ['PYSPARK_SUBMIT_ARGS'] = f'--master {master} --driver-memory 4g --total-executor-cores 6 --executor-memory 8g --packages org.postgresql:postgresql:42.1.1 pyspark-shell'
 ```
 
+## Order of execution
+1. dim_title_desc.ipynb
+2. dim_casts.ipynb
+3. dim_crew.ipynb
+
+
 ## docker-compose
 1. Create redash db
 > docker-compose run --rm redash create_db

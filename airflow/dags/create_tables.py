@@ -69,7 +69,6 @@ with DAG(
         CREATE TABLE IF NOT EXISTS dim_casts (
             id SERIAL PRIMARY KEY,
             name VARCHAR(200) NOT NULL,
-            character VARCHAR(300),
             age SMALLINT,
             is_alive BOOLEAN,
             nconst VARCHAR(15) NOT NULL
@@ -83,7 +82,7 @@ with DAG(
         sql="""
         CREATE TABLE IF NOT EXISTS fact_titles (
             id SERIAL PRIMARY KEY,
-            downloadDate_id INT REFERENCES dim_download_date (id),
+            download_date_id INT REFERENCES dim_download_date (id),
             episode_id INT REFERENCES dim_episode (id),
             title_desc_id INT REFERENCES dim_title_desc (id),
             titles_casts_id INT,    
@@ -102,7 +101,8 @@ with DAG(
         sql="""
         CREATE TABLE IF NOT EXISTS titles_crew (
             title_id INT,
-            crew_id INT REFERENCES dim_crew (id)
+            crew_id INT REFERENCES dim_crew (id),
+            role VARCHAR(50)
         );
         """,
     )                             
@@ -114,7 +114,6 @@ with DAG(
         CREATE TABLE IF NOT EXISTS dim_crew (
             id SERIAL PRIMARY KEY,
             name VARCHAR(200) NOT NULL,
-            role VARCHAR(50) NOT NULL,
             age SMALLINT,
             is_alive BOOLEAN,
             nconst VARCHAR(15) NOT NULL
@@ -128,7 +127,8 @@ with DAG(
         sql="""
         CREATE TABLE IF NOT EXISTS titles_casts (
             title_id INT,
-            cast_id INT REFERENCES dim_casts (id)
+            cast_id INT REFERENCES dim_casts (id),
+            character VARCHAR(300)
         );
         """,
     )                                                                  
