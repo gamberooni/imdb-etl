@@ -33,8 +33,9 @@ with DAG(
         sql="""
         CREATE TABLE IF NOT EXISTS dim_ratings (
             id SERIAL PRIMARY KEY,
-            avRating FLOAT(2),
-            numVotes INT
+            tconst VARCHAR(15),
+            av_rating FLOAT(2),
+            num_votes INT
         );
         """,
     )    
@@ -58,15 +59,13 @@ with DAG(
         CREATE TABLE IF NOT EXISTS dim_title_desc (
             id SERIAL PRIMARY KEY,
             tconst VARCHAR(20),
-            type VARCHAR(20),
-            primaryTitle VARCHAR(200),
-            originalTitle VARCHAR(200),
-            isAdult BOOLEAN,
-            startYear SMALLINT,
-            endYear SMALLINT,
-            runtimeMinutes SMALLINT,
-            language VARCHAR(50),
-            region VARCHAR(50)
+            type VARCHAR(40),
+            primary_title VARCHAR(800),
+            original_title VARCHAR(800),
+            is_adult BOOLEAN,
+            start_year SMALLINT,
+            end_year SMALLINT,
+            runtime_minutes SMALLINT
         );
         """,
     )    
@@ -78,10 +77,11 @@ with DAG(
         CREATE TABLE IF NOT EXISTS dim_casts (
             id SERIAL PRIMARY KEY,
             name VARCHAR(200),
-            characterName VARCHAR(200),
+            character VARCHAR(300),
             age SMALLINT,
-            isAlive BOOLEAN,
-            nconst VARCHAR(20)
+            is_alive BOOLEAN,
+            nconst VARCHAR(15),
+            tconst VARCHAR(15)
         );
         """,
     )        
@@ -148,10 +148,11 @@ with DAG(
         CREATE TABLE IF NOT EXISTS dim_crew (
             id SERIAL PRIMARY KEY,
             name VARCHAR(200),
-            role VARCHAR(20),
+            role VARCHAR(50),
             age SMALLINT,
-            isAlive BOOLEAN,
-            nconst VARCHAR(20)
+            is_alive BOOLEAN,
+            tconst VARCHAR(15),
+            nconst VARCHAR(15)
         );
         """,
     )    
