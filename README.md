@@ -26,8 +26,8 @@ source ~/.profile
 ## Spark Standalone Cluster
 1. Start master and worker
 ```
-. $SPARK_HOME/sbin/start-master.sh
-. $SPARK_HOME/sbin/start-worker.sh spark://zy-ubuntu:7077 
+$SPARK_HOME/sbin/start-master.sh
+$SPARK_HOME/sbin/start-worker.sh spark://zy-ubuntu:7077 
 ```
 
 2. In the jupyter notebook, run the following lines to set number of cores and amount of memory to use
