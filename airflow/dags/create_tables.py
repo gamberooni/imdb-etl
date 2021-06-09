@@ -27,14 +27,15 @@ with DAG(
         """,
     )
 
-    create_dim_episode_table = PostgresOperator(
-        task_id="create_dim_episode_table",
+    create_dim_episodes_table = PostgresOperator(
+        task_id="create_dim_episodes_table",
         postgres_conn_id="imdb_postgres",
         sql="""
-        CREATE TABLE IF NOT EXISTS dim_episode (
+        CREATE TABLE IF NOT EXISTS dim_episodes (
             id SERIAL PRIMARY KEY,
-            seasonNumber SMALLINT,
-            epCount SMALLINT
+            season SMALLINT,
+            total_episodes SMALLINT,
+            tconst VARCHAR(20) NOT NULL
         );
         """,
     )    
@@ -83,10 +84,8 @@ with DAG(
         CREATE TABLE IF NOT EXISTS fact_titles (
             id SERIAL PRIMARY KEY,
             download_date_id INT REFERENCES dim_download_date (id),
-            episode_id INT REFERENCES dim_episode (id),
-            title_desc_id INT REFERENCES dim_title_desc (id),
-            titles_casts_id INT,    
-            titles_crew_id INT,                          
+            episode_id INT REFERENCES dim_episodes (id),
+            title_desc_id INT REFERENCES dim_title_desc (id),                   
             daily_avRatingChange FLOAT(2),
             weekly_avRatingChange FLOAT(2),
             daily_numVotesChange INT,
@@ -166,7 +165,7 @@ with DAG(
     drop_schema >> create_schema
     create_schema >> create_dim_title_desc_table >> create_fact_titles_table
     create_schema >> create_dim_download_date_table >> create_fact_titles_table
-    create_schema >> create_dim_episode_table >> create_fact_titles_table 
+    create_schema >> create_dim_episodes_table >> create_fact_titles_table 
     create_schema >> create_dim_crew_table >> create_titles_crew_table >> create_fact_titles_table
     create_schema >> create_dim_casts_table >> create_titles_casts_table >> create_fact_titles_table
     

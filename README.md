@@ -40,9 +40,9 @@ os.environ['PYSPARK_SUBMIT_ARGS'] = f'--master {master} --driver-memory 4g --tot
 
 ## Order of execution
 1. dim_title_desc.ipynb
-2. dim_casts.ipynb
-3. dim_crew.ipynb
-
+2. dim_episodes.ipynb
+3. dim_casts.ipynb
+4. dim_crew.ipynb
 
 ## docker-compose
 1. Create redash db
