@@ -1,5 +1,8 @@
 # imdb-etl
 
+## Schema
+![schema](./images/schema.png)
+
 ## Steps
 1. Download IMDb dataset from [here](https://datasets.imdbws.com/)
 2. Unzip and upload to MinIO
