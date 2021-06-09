@@ -66,30 +66,6 @@ services:
     restart: always
     healthcheck:
       test: pg_isready -U admin -d imdb -h localhost -q
- 
-  # clickhouse
-
-  ch_server:
-    image: yandex/clickhouse-server
-    container_name: ch_server
-    ports:
-      - "8123:8123"
-    volumes:
-      - ch-server-volume:/var/lib/clickhouse
-    networks:
-      - imdb-etl
-    restart: always
-
-  ch_client:
-    image: yandex/clickhouse-client
-    container_name: ch_client
-    entrypoint:
-      - /bin/sleep
-    command:
-      - infinity
-    networks:
-      - imdb-etl
-    restart: always
 
   # redash
 
@@ -281,6 +257,5 @@ networks:
 volumes:
   minio-volume:
   postgres-volume:
-  ch-server-volume:
   redash-postgres-volume:
   airflow-postgres-volume:

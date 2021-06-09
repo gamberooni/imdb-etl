@@ -3,9 +3,9 @@
 ## Steps
 1. Download IMDb dataset from [here](https://datasets.imdbws.com/)
 2. Unzip and upload to MinIO
-3. Pyspark read file contents (.tsv files) into dataframe
+3. Pyspark read file contents (.tsv files) from MinIO into dataframe
 4. Pyspark transformation
-5. Push transformed data into OLAP database
+5. Push transformed data into Postgres
 6. Create visualizations
 
 ## Install Spark
@@ -55,4 +55,3 @@ os.environ['PYSPARK_SUBMIT_ARGS'] = f'--master {master} --driver-memory 4g --tot
 
 - unit testing 
 - metrics monitoring
-- use delta lake?
