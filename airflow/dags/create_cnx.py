@@ -11,7 +11,7 @@ logging.basicConfig(
     level=logging.INFO
     )
 
-def create_conn(conn_id, conn_type, host, login, password, port=None, schema=None, extra=None):
+def create_conn(conn_id, conn_type, host, login=None, password=None, port=None, schema=None, extra=None):
     conn = Connection(
         conn_id=conn_id,
         conn_type=conn_type,
@@ -70,3 +70,14 @@ with DAG(
             "port": 5432,
         },
     )    
+
+    create_spark_cnx = PythonOperator(
+        task_id="create_spark_cnx", 
+        python_callable=create_conn,
+        op_kwargs={
+            "conn_id": "imdb_spark", 
+            "conn_type": "spark",
+            "host": "spark://192.168.0.188",
+            "port": 7077,
+        },
+    )        

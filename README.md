@@ -11,6 +11,9 @@
 5. Push transformed data into Postgres
 6. Create visualizations
 
+## Build Airflow image with Spark
+1. docker build -t custom/my-airflow ./airflow
+
 ## Install Spark
 ```
 sudo apt update  
@@ -40,6 +43,15 @@ import os
 master = "spark://zy-ubuntu:7077"  
 os.environ['PYSPARK_SUBMIT_ARGS'] = f'--master {master} --driver-memory 4g --total-executor-cores 6 --executor-memory 8g --packages org.postgresql:postgresql:42.1.1 pyspark-shell'
 ```
+
+## Spark read object from MinIO
+| No. | Jar File            | Version       |
+| :-  | :-                  | :-            |
+| 1.  | hadoop-aws          | 3.2.0         |
+| 2.  | aws-java-sdk-bundle | 1.11.375      |
+| 3.  | guava               | 30.1.1-jre    |
+| 4.  | jets3t              | 0.9.4         |
+| 5.  | postgresql          | 42.2.0        |
 
 ## Order of execution
 1. dim_title_desc.ipynb
