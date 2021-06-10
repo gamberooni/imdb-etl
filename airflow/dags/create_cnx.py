@@ -77,7 +77,7 @@ with DAG(
         op_kwargs={
             "conn_id": "imdb_spark", 
             "conn_type": "spark",
-            "host": "spark://192.168.0.188",
+            "host": "spark://spark",
             "port": 7077,
         },
     )        

@@ -5,7 +5,7 @@ from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOpe
 from airflow.utils.dates import days_ago
 import os 
 
-PYSPARK_HOME = os.environ['PYSPARK_HOME']
+SPARK_HOME = os.environ['SPARK_HOME']
 
 args = {
     'owner': 'Airflow',
@@ -22,12 +22,11 @@ with DAG(
     submit_job = SparkSubmitOperator(
         task_id="read_minio",
         conn_id='imdb_spark',
-        application=f"{PYSPARK_HOME}/read_minio.py", 
+        application=f"{SPARK_HOME}/pyspark_apps/read_minio.py", 
         name='read_from_minio',
         executor_memory='4g',
         driver_memory='4g',
-        total_executor_cores=6,
-        env_vars={'JAVA_HOME': '/usr/lib/jvm/java-8-openjdk-amd64'}
+        total_executor_cores=6
     )
 
     # [START howto_operator_spark_jdbc]
