@@ -59,6 +59,11 @@ os.environ['PYSPARK_SUBMIT_ARGS'] = f'--master {master} --driver-memory 4g --tot
 3. dim_casts.ipynb
 4. dim_crew.ipynb
 
+## Get IP address of Docker containers
+> $ docker network inspect -f \
+'{{json .Containers}}' 9f6bc3c15568 | \
+jq '.[] | .Name + ":" + .IPv4Address'
+
 ## docker-compose
 1. Create redash db
 > docker-compose run --rm redash create_db

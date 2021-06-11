@@ -21,6 +21,7 @@ x-airflow-common:
     - ./airflow/dags:/opt/airflow/dags
     - ./airflow/logs:/opt/airflow/logs
     - ./airflow/plugins:/opt/airflow/plugins
+    - ./airflow/pyspark_apps:/opt/spark/pyspark_apps
   user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-50000}"
   depends_on:
     airflow_redis:
@@ -266,6 +267,7 @@ services:
     ports:
       - '8080:8080'
       - '7077:7077'
+      - '4040:4040'  
     networks:
     - imdb-etl 
 
@@ -276,8 +278,8 @@ services:
     environment:
       - SPARK_MODE=worker
       - SPARK_MASTER_URL=spark://spark:7077
-      - SPARK_WORKER_MEMORY=3G
-      - SPARK_WORKER_CORES=3
+      - SPARK_WORKER_MEMORY=8G
+      - SPARK_WORKER_CORES=7
       - SPARK_RPC_AUTHENTICATION_ENABLED=no
       - SPARK_RPC_ENCRYPTION_ENABLED=no
       - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no

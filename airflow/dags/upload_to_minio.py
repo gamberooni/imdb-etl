@@ -44,21 +44,12 @@ def _upload_file(tsv_file, object_prefix):
         bucket_name=BUCKET_NAME,
     )
 
-def _rename_file(ori_filename, rename_to):
-    airflow_home_dir = os.environ.get('AIRFLOW_HOME', '/opt/airflow')
-    old_file = os.path.join(airflow_home_dir, ori_filename)
-    new_file = os.path.join(airflow_home_dir, rename_to)
-    os.rename(old_file, new_file)
-    return new_file
-
 def _unzip_gz(file):
     with gzip.open(file, 'rb') as f_in:  # unzip and open the .gz file
         filename = file.split('.gz')[0]
         with open(filename, 'wb') as f_out:  # open another blank file
             shutil.copyfileobj(f_in, f_out)  # copy the .gz file contents to the blank file
     logging.info(f"Finished unzipping {file}. Output is {filename}")
-
-    # tsv_filename = _rename_file(filename, object_prefix)
 
     return filename
 
