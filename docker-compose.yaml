@@ -46,6 +46,7 @@ x-redash-service:
     PYTHONUNBUFFERED: '0'
     REDASH_MAIL_DEFAULT_SENDER: redash@example.com
     REDASH_MAIL_SERVER: redash_email
+    REDASH_MAIL_PORT: '1025'
   restart: always
 
 services:
@@ -100,7 +101,7 @@ services:
     environment:
       <<: *redash-service-env      
       QUEUES: "celery"
-      WORKERS_COUNT: 1
+      WORKERS_COUNT: 4
     networks:
       - imdb-etl      
 
@@ -111,7 +112,7 @@ services:
     environment:
       <<: *redash-service-env      
       QUEUES: "scheduled_queries,schemas"
-      WORKERS_COUNT: 1
+      WORKERS_COUNT: 4
     networks:
       - imdb-etl      
 
@@ -122,7 +123,7 @@ services:
     environment:
       <<: *redash-service-env      
       QUEUES: "queries"
-      WORKERS_COUNT: 2
+      WORKERS_COUNT: 6
     networks:
       - imdb-etl      
 
@@ -164,10 +165,11 @@ services:
       - imdb-etl    
 
   redash_email:
-    image: djfarrelly/maildev
+    image: maildev/maildev
     container_name: redash_email
+    command: --outgoing-host 'smtp.gmail.com' --outgoing-secure --outgoing-user 'you@gmail.com' --outgoing-pass 'password'
     ports:
-      - "1080:80"
+      - "1080:1080"
     restart: always
     networks:
       - imdb-etl
