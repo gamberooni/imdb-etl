@@ -18,6 +18,8 @@ IMDB_DATASETS_BASE_URL = os.environ.get('IMDB_DATASETS_BASE_URL', 'https://datas
 now = datetime.datetime.now()
 OBJECT_PREFIX = now.strftime("%Y-%m/%d")
 
+args = {"owner": "imdb"}
+
 def _remove_local_file(filename):
     counter = 0
     while 1:
@@ -83,6 +85,7 @@ def download_file(base_url, filename, object_prefix):
 with DAG(
     dag_id='upload_imdb_datasets_minio',
     schedule_interval=None,
+    default_args=args,    
     start_date=days_ago(2),
     max_active_runs=1,
     tags=['minio'],

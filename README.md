@@ -61,7 +61,7 @@ os.environ['PYSPARK_SUBMIT_ARGS'] = f'--master {master} --driver-memory 4g --tot
 
 ## Get IP address of Docker containers
 > $ docker network inspect -f \
-'{{json .Containers}}' 9f6bc3c15568 | \
+'{{json .Containers}}' imdb-etl | \
 jq '.[] | .Name + ":" + .IPv4Address'
 
 ## docker-compose

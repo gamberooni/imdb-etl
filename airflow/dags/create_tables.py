@@ -3,13 +3,13 @@ from airflow import DAG
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 import os
 
-default_args = {"owner": "airflow"}
+args = {"owner": "imdb"}
 
 with DAG(
     dag_id="create_tables",
     start_date=datetime.datetime(2020, 2, 2),
     schedule_interval="@once",
-    default_args=default_args,
+    default_args=args,
     catchup=False,
     tags=['postgres'],
 ) as dag:

@@ -1,20 +1,20 @@
-FROM apache/airflow:2.1.0
+FROM ubuntu:18.04
 
 ARG SPARK_HOME=/opt/spark
 
-RUN pip install apache-airflow-providers-apache-spark pyspark==3.1.2
+RUN apt update && apt install -y \
+    openjdk-8-jdk \
+    scala \
+    git \
+    wget \
+    curl
+#     software-properties-common
 
-USER root
+# RUN add-apt-repository ppa:deadsnakes/ppa && apt update && apt install python3.6
 
-RUN apt update && apt install default-jdk scala git wget -y
-RUN wget https://downloads.apache.org/spark/spark-3.1.2/spark-3.1.2-bin-hadoop3.2.tgz && tar -xvzf spark-*
-RUN mv spark-3.1.2-bin-hadoop3.2 ${SPARK_HOME} && rm spark-3.1.2-bin-hadoop3.2.tgz
-
-ENV SPARK_HOME=${SPARK_HOME}
-ENV PATH=$PATH:${SPARK_HOME}/bin:${SPARK_HOME}/sbin
-ENV PYSPARK_PYTHON=/usr/bin/python3
-ENV SPARK_MASTER_WEBUI_PORT=8082
-ENV JAVA_HOME /usr/lib/jvm/java-11-openjdk-amd64
+RUN wget -q https://downloads.apache.org/spark/spark-3.1.2/spark-3.1.2-bin-hadoop3.2.tgz && \
+    tar -xvzf spark-* && \
+    mv spark-3.1.2-bin-hadoop3.2 ${SPARK_HOME}
 
 RUN rm ${SPARK_HOME}/jars/guava-14.0.1.jar	
 
@@ -29,7 +29,16 @@ RUN curl https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.11.3
     curl https://repo1.maven.org/maven2/net/java/dev/jets3t/jets3t/0.9.4/jets3t-0.9.4.jar \
     --output ${SPARK_HOME}/jars/jets3t-0.9.4.jar
 
-# COPY pyspark_apps /opt/spark/pyspark_apps
+ENV SPARK_HOME=${SPARK_HOME}
+ENV PATH=$PATH:${SPARK_HOME}/bin:${SPARK_HOME}/sbin
+ENV PYSPARK_PYTHON=/usr/bin/python3
+ENV SPARK_MASTER_PORT=7077
+ENV SPARK_MASTER_WEBUI_PORT=8080
+ENV SPARK_MASTER_LOG ${SPARK_HOME}/master/logs
 
-RUN chown airflow ${SPARK_HOME} && chgrp airflow ${SPARK_HOME}
-USER airflow
+WORKDIR ${SPARK_HOME}
+COPY entrypoint.sh entrypoint.sh
+EXPOSE 7077 8080
+
+ENTRYPOINT [ "/bin/bash" ]
+CMD [ "entrypoint.sh" ]

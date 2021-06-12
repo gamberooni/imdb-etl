@@ -11,6 +11,10 @@ logging.basicConfig(
     level=logging.INFO
     )
 
+args = {
+    'owner': 'imdb',
+}
+
 def create_conn(conn_id, conn_type, host, login=None, password=None, port=None, schema=None, extra=None):
     conn = Connection(
         conn_id=conn_id,
@@ -39,6 +43,7 @@ def create_conn(conn_id, conn_type, host, login=None, password=None, port=None, 
 with DAG(
     dag_id='create_connections',
     schedule_interval=None,
+    default_args=args,
     start_date=days_ago(2),
     max_active_runs=1,
     tags=['connections'],
