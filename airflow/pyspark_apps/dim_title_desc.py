@@ -18,7 +18,7 @@ def upload_dim_title_desc():
     # set config to read from minio
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.access.key", "admin")
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.secret.key", "password")
-    spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.endpoint", "http://172.18.0.15:9000")  # must use IP address
+    spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.endpoint", "http://192.168.0.188:9000")  # must use IP address
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.connection.ssl.enabled", "false")
     spark.sparkContext._jsc.hadoopConfiguration().set("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
     spark.sparkContext._jsc.hadoopConfiguration().set("spark.hadoop.fs.s3a.path.style.access", "true")
@@ -55,7 +55,7 @@ def upload_dim_title_desc():
     title_basics_df = title_basics_df.withColumn('runtime_minutes', F.col('runtime_minutes').cast(ShortType()))
 
     # read ratings 
-    title_ratings_df = spark.read.csv("title.ratings.tsv", sep=r'\t', header=True)
+    title_ratings_df = spark.read.csv("s3a://imdb/2021-06/06/title.ratings.tsv", sep=r'\t', header=True)
 
     title_ratings_df = title_ratings_df.withColumnRenamed("averageRating", 'av_rating').withColumnRenamed('numVotes', 'num_votes')
     title_ratings_df = title_ratings_df.withColumn('av_rating', F.col('av_rating').cast(DecimalType(10, 1)))  # 1 decimal point

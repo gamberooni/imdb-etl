@@ -9,6 +9,16 @@ def upload_dim_crew():
         .appName("IMDB ETL Task 4") \
         .getOrCreate()
 
+    # set config to read from minio
+    spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.access.key", "admin")
+    spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.secret.key", "password")
+    spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.endpoint", "http://192.168.0.188:9000")  # must use IP address
+    spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.connection.ssl.enabled", "false")
+    spark.sparkContext._jsc.hadoopConfiguration().set("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
+    spark.sparkContext._jsc.hadoopConfiguration().set("spark.hadoop.fs.s3a.path.style.access", "true")
+    spark.sparkContext._jsc.hadoopConfiguration().set("-Dcom.amazonaws.services.s3.enableV4", "true")
+    spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.multipart.size", "104857600")    
+
     title_principals_df = spark.read.csv("s3a://imdb/2021-06/06/title.principals.tsv", sep=r'\t', header=True)  
     title_crew_df = title_principals_df.filter(
             (F.col('category') != 'self') &
@@ -19,7 +29,7 @@ def upload_dim_crew():
     title_crew_df = title_crew_df.withColumnRenamed('category', 'role')
 
     # read tsv file into df
-    name_basics_df = spark.read.csv("name.basics.tsv", sep=r'\t', header=True)
+    name_basics_df = spark.read.csv("s3a://imdb/2021-06/06/name.basics.tsv", sep=r'\t', header=True)
 
     # rename column
     name_basics_df = name_basics_df.withColumnRenamed('primaryName', 'name')

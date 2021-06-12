@@ -1,13 +1,21 @@
-FROM ubuntu:18.04
+# FROM ubuntu:18.04
+FROM python:3.6-slim-buster
 
 ARG SPARK_HOME=/opt/spark
 
+# workaround to install scala properly
+RUN mkdir -p /usr/share/man/man1
+
 RUN apt update && apt install -y \
-    openjdk-8-jdk \
+    software-properties-common \
     scala \
     git \
     wget \
-    curl
+    curl 
+
+RUN apt-add-repository 'deb http://security.debian.org/debian-security stretch/updates main' && \
+    apt update && \
+    apt install -y openjdk-8-jdk 
 
 RUN wget -q https://downloads.apache.org/spark/spark-3.1.2/spark-3.1.2-bin-hadoop3.2.tgz && \
     tar -xvzf spark-* && \

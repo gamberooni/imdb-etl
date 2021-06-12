@@ -4,7 +4,6 @@ from airflow.utils.dates import days_ago
 import os 
 
 SPARK_HOME = os.environ['SPARK_HOME']
-PYSPARK_DRIVER_PYTHON = '/opt/bitnami/python/bin/python3'
 
 args = {
     'owner': 'imdb',
@@ -26,10 +25,6 @@ with DAG(
         executor_memory='5g',
         driver_memory='2g',
         total_executor_cores=5,
-        # env_vars={
-        #     'PYSPARK_DRIVER_PYTHON': PYSPARK_DRIVER_PYTHON,
-        #     'PYSPARK_PYTHON': PYSPARK_DRIVER_PYTHON
-        # }
     )
 
     dim_episodes = SparkSubmitOperator(
@@ -40,10 +35,6 @@ with DAG(
         executor_memory='5g',
         driver_memory='2g',
         total_executor_cores=5,
-        # env_vars={
-        #     'PYSPARK_DRIVER_PYTHON': PYSPARK_DRIVER_PYTHON,
-        #     'PYSPARK_PYTHON': PYSPARK_DRIVER_PYTHON
-        # }
     )
 
     dim_casts = SparkSubmitOperator(
@@ -54,10 +45,6 @@ with DAG(
         executor_memory='5g',
         driver_memory='2g',
         total_executor_cores=5,
-        # env_vars={
-        #     'PYSPARK_DRIVER_PYTHON': PYSPARK_DRIVER_PYTHON,
-        #     'PYSPARK_PYTHON': PYSPARK_DRIVER_PYTHON
-        # }
     )
 
     dim_crew = SparkSubmitOperator(
@@ -68,10 +55,6 @@ with DAG(
         executor_memory='5g',
         driver_memory='2g',
         total_executor_cores=5,
-        # env_vars={
-        #     'PYSPARK_DRIVER_PYTHON': PYSPARK_DRIVER_PYTHON,
-        #     'PYSPARK_PYTHON': PYSPARK_DRIVER_PYTHON
-        # }
     )
 
     dim_download_date = SparkSubmitOperator(
@@ -82,10 +65,6 @@ with DAG(
         executor_memory='1g',
         driver_memory='1g',
         total_executor_cores=1,
-        env_vars={
-            'PYSPARK_DRIVER_PYTHON': PYSPARK_DRIVER_PYTHON,
-            'PYSPARK_PYTHON': PYSPARK_DRIVER_PYTHON
-        }
     )
 
     dim_download_date >> dim_title_desc >> dim_episodes >> dim_casts >> dim_crew

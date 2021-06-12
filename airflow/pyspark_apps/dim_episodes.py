@@ -11,7 +11,7 @@ def upload_dim_episodes():
     # set config to read from minio
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.access.key", "admin")
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.secret.key", "password")
-    spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.endpoint", "http://172.18.0.15:9000")  # must use IP address
+    spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.endpoint", "http://192.168.0.188:9000")  # must use IP address
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.connection.ssl.enabled", "false")
     spark.sparkContext._jsc.hadoopConfiguration().set("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
     spark.sparkContext._jsc.hadoopConfiguration().set("spark.hadoop.fs.s3a.path.style.access", "true")
