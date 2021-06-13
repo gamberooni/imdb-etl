@@ -3,24 +3,34 @@ import pyspark.sql.functions as F
 from pyspark.sql.functions import when
 from pyspark.sql.types import IntegerType
 import datetime
+import os 
+
+
+MINIO_HOST = os.environ['MINIO_HOST']
+MINIO_ACCESS_KEY = os.environ['MINIO_ACCESS_KEY']
+MINIO_SECRET_KEY = os.environ['MINIO_SECRET_KEY']
+POSTGRES_HOST = os.environ['POSTGRES_HOST']
+POSTGRES_USER = os.environ['POSTGRES_USER']
+POSTGRES_PASSWORD = os.environ['POSTGRES_PASSWORD']
+IMDB_BUCKET_NAME = os.environ['IMDB_BUCKET_NAME']
+IMDB_OBJECT_PREFIX = os.environ['IMDB_OBJECT_PREFIX']
 
 def upload_dim_casts():
     spark = SparkSession.builder \
-        .appName("IMDb ETL Task 3") \
+        .appName("casts") \
         .getOrCreate()
 
     # set config to read from minio
-    spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.access.key", "admin")
-    spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.secret.key", "password")
-    spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.endpoint", "http://192.168.0.188:9000")  # must use IP address
+    spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.access.key", MINIO_ACCESS_KEY)
+    spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.secret.key", MINIO_SECRET_KEY)
+    spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.endpoint", f"http://{MINIO_HOST}")  # must use IP address
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.connection.ssl.enabled", "false")
     spark.sparkContext._jsc.hadoopConfiguration().set("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
     spark.sparkContext._jsc.hadoopConfiguration().set("spark.hadoop.fs.s3a.path.style.access", "true")
     spark.sparkContext._jsc.hadoopConfiguration().set("-Dcom.amazonaws.services.s3.enableV4", "true")
-    spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.multipart.size", "104857600")    
+    spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.multipart.size", "104857600")        
 
-    title_principals_df = spark.read.csv("s3a://imdb/2021-06/06/title.principals.tsv", sep=r'\t', header=True)  
-
+    title_principals_df = spark.read.csv(f"s3a://{IMDB_BUCKET_NAME}/{IMDB_OBJECT_PREFIX}/title.principals.tsv", sep=r'\t', header=True)  
     title_principals_df = title_principals_df.drop('ordering').drop('job').drop('category')
 
     title_principals_df = title_principals_df.withColumn("characters", F.regexp_replace(F.col("characters"), '[\[\]\"]', "").alias("replaced"))
@@ -32,7 +42,7 @@ def upload_dim_casts():
             (F.col('category') == 'actress'))
 
     # read tsv file into df
-    name_basics_df = spark.read.csv("s3a://imdb/2021-06/06/name.basics.tsv", sep=r'\t', header=True)
+    name_basics_df = spark.read.csv(f"s3a://{IMDB_BUCKET_NAME}/{IMDB_OBJECT_PREFIX}/name.basics.tsv", sep=r'\t', header=True)  
 
     # rename column
     name_basics_df = name_basics_df.withColumnRenamed('primaryName', 'name')
@@ -57,61 +67,48 @@ def upload_dim_casts():
 
     # insert df into dim_casts table
     df_upload.write.format('jdbc').options(
-        url='jdbc:postgresql://imdb_postgres:5432/imdb',
+        url=f'jdbc:postgresql://{POSTGRES_HOST}/imdb',
         driver='org.postgresql.Driver',
-        dbtable='dim_casts',
-        user='admin',
-        password='password'
+        dbtable='casts',
+        user=POSTGRES_USER,
+        password=POSTGRES_PASSWORD
         ).mode('append').save()
 
-    title_desc_df = spark.read.format('jdbc').options(
-        url='jdbc:postgresql://imdb_postgres:5432/imdb',
+    titles_df = spark.read.format('jdbc').options(
+        url=f'jdbc:postgresql://{POSTGRES_HOST}/imdb',
         driver='org.postgresql.Driver',
-        dbtable='dim_title_desc',
-        user='admin',
-        password='password'
+        dbtable='titles',
+        user=POSTGRES_USER,
+        password=POSTGRES_PASSWORD
         ).load()
-        
-    title_desc_id_df = title_desc_df.select('id', 'tconst')
-    title_desc_id_df = title_desc_id_df.withColumnRenamed('id', 'title_id')      
 
-    fact_titles_pg_df = spark.read.format('jdbc').options(
-        url='jdbc:postgresql://imdb_postgres:5432/imdb',
-        driver='org.postgresql.Driver',
-        dbtable='fact_titles',
-        user='admin',
-        password='password'
-        ).load()
-    fact_titles_pg_df = fact_titles_pg_df.withColumnRenamed('title_desc_id', 'title_id')      
-
-    title_desc_id_df = fact_titles_pg_df.join(title_desc_id_df, ['title_id']).select('title_id', 'tconst')  # now title_id and tconst match
+    titles_id_df = titles_df.select('id', 'tconst').withColumnRenamed('id', 'title_id')
 
     casts_from_pg_df = spark.read.format('jdbc').options(
-        url='jdbc:postgresql://imdb_postgres:5432/imdb',
+        url=f'jdbc:postgresql://{POSTGRES_HOST}/imdb',
         driver='org.postgresql.Driver',
-        dbtable='dim_casts',
-        user='admin',
-        password='password'
+        dbtable='casts',
+        user=POSTGRES_USER,
+        password=POSTGRES_PASSWORD
         ).load()
 
-    casts_id_df = casts_from_pg_df.select('id', 'nconst')
-    casts_id_df = casts_id_df.withColumnRenamed('id', 'cast_id')
+    casts_id_df = casts_from_pg_df.select('id', 'nconst').withColumnRenamed('id', 'cast_id')
 
     df_casts_composite_table = df_casts.select('nconst', 'tconst', 'character')
+
     df_tmp = casts_id_df.join(df_casts_composite_table, ['nconst'])
 
-    df_titles_casts = df_tmp.join(title_desc_id_df, ['tconst'])
+    df_titles_casts = df_tmp.join(titles_id_df, ['tconst'])
     df_titles_casts = df_titles_casts.drop('nconst').drop('tconst')
 
     # insert df into titles_casts table
     df_titles_casts.write.format('jdbc').options(
-        url='jdbc:postgresql://imdb_postgres:5432/imdb',
+        url=f'jdbc:postgresql://{POSTGRES_HOST}/imdb',
         driver='org.postgresql.Driver',
         dbtable='titles_casts',
-        user='admin',
-        password='password'
+        user=POSTGRES_USER,
+        password=POSTGRES_PASSWORD
         ).mode('append').save()
-
 
 def main():
     upload_dim_casts()

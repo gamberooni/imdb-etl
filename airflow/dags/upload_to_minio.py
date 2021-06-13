@@ -1,9 +1,9 @@
 from airflow.models.dag import DAG
 from airflow.operators.python import PythonOperator
-from airflow.operators.bash import BashOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.amazon.aws.operators.s3_bucket import S3CreateBucketOperator
 from airflow.utils.dates import days_ago
+from airflow.models import Variable
 from time import sleep
 import os
 import logging
@@ -12,11 +12,9 @@ import gzip
 import shutil
 import datetime
 
-BUCKET_NAME = os.environ.get('BUCKET_NAME', 'imdb')
-IMDB_DATASETS_BASE_URL = os.environ.get('IMDB_DATASETS_BASE_URL', 'https://datasets.imdbws.com/')
 
-now = datetime.datetime.now()
-OBJECT_PREFIX = now.strftime("%Y-%m/%d")
+BUCKET_NAME = Variable.get("imdb_bucket_name")
+IMDB_DATASETS_BASE_URL = Variable.get("imdb_datasets_base_url")
 
 args = {"owner": "imdb"}
 
@@ -36,6 +34,14 @@ def _remove_local_file(filename):
         except OSError:
             logging.error(f"Unable to delete file {filename}. File is still being used by another process.")
             sleep(5)  
+
+def _check_object_exists(tsv_filename, object_prefix):      
+    key = object_prefix + "/" + tsv_filename      
+    s3_hook = S3Hook(aws_conn_id="imdb_minio")
+    object_exists = s3_hook.check_for_key(key, BUCKET_NAME)
+    if object_exists:
+        logging.info(f"Object '{key}' already exists in bucket '{BUCKET_NAME}'")
+    return object_exists
 
 def _upload_file(tsv_file, object_prefix):
     key = object_prefix + "/" + tsv_file
@@ -61,26 +67,32 @@ def download_file(base_url, filename, object_prefix):
 
     logging.info(f"Downloading from {full_path}")
     gz_filename = full_path.split('/')[-1]
-    # Note the stream=True parameter below
-    with requests.get(full_path, stream=True) as r:
-        r.raise_for_status()
-        with open(gz_filename, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=8192): 
-                # If you have chunk encoded response uncomment if
-                # and set chunk_size parameter to None.
-                #if chunk: 
-                f.write(chunk)
-    logging.info(f"Finished downloading from {full_path}")
 
-    tsv_file = _unzip_gz(gz_filename)
+    if _check_object_exists(gz_filename.split('.gz')[0], object_prefix):
+        pass
+    else:        
+        # Note the stream=True parameter below
+        with requests.get(full_path, stream=True) as r:
+            r.raise_for_status()
+            with open(gz_filename, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192): 
+                    # If you have chunk encoded response uncomment if
+                    # and set chunk_size parameter to None.
+                    #if chunk: 
+                    f.write(chunk)
+        logging.info(f"Finished downloading from {full_path}")
 
-    _upload_file(tsv_file, object_prefix)
-    _remove_local_file(tsv_file)
-    _remove_local_file(gz_filename)
+        tsv_file = _unzip_gz(gz_filename)
 
-    logging.info(f"Uploaded {tsv_file} to MinIO as {object_prefix + tsv_file}")
+        _upload_file(tsv_file, object_prefix)
+        _remove_local_file(tsv_file)
+        _remove_local_file(gz_filename)
 
-    return True
+        logging.info(f"Uploaded {tsv_file} to MinIO as {object_prefix + tsv_file}")
+
+def set_object_prefix():
+    now = datetime.datetime.now()
+    Variable.set("imdb_object_prefix", now.strftime("%Y-%m/%d"))
 
 with DAG(
     dag_id='upload_imdb_datasets_minio',
@@ -88,7 +100,7 @@ with DAG(
     default_args=args,    
     start_date=days_ago(2),
     max_active_runs=1,
-    tags=['minio'],
+    tags=['minio', 'imdb'],
 ) as dag:
 
     create_bucket = S3CreateBucketOperator(
@@ -103,7 +115,7 @@ with DAG(
         op_kwargs={
             'base_url': IMDB_DATASETS_BASE_URL, 
             "filename": "name.basics.tsv.gz",
-            "object_prefix": OBJECT_PREFIX,
+            "object_prefix": Variable.get("imdb_object_prefix"),
         },
     )
 
@@ -113,7 +125,7 @@ with DAG(
         op_kwargs={
             'base_url': IMDB_DATASETS_BASE_URL, 
             "filename": "title.akas.tsv.gz",
-            "object_prefix": OBJECT_PREFIX,
+            "object_prefix": Variable.get("imdb_object_prefix"),
         },
     )
 
@@ -123,7 +135,7 @@ with DAG(
         op_kwargs={
             'base_url': IMDB_DATASETS_BASE_URL, 
             "filename": "title.basics.tsv.gz",
-            "object_prefix": OBJECT_PREFIX,
+            "object_prefix": Variable.get("imdb_object_prefix"),
         },
     )
 
@@ -133,7 +145,7 @@ with DAG(
         op_kwargs={
             'base_url': IMDB_DATASETS_BASE_URL, 
             "filename": "title.crew.tsv.gz",
-            "object_prefix": OBJECT_PREFIX,
+            "object_prefix": Variable.get("imdb_object_prefix"),
         },
     )
 
@@ -143,7 +155,7 @@ with DAG(
         op_kwargs={
             'base_url': IMDB_DATASETS_BASE_URL, 
             "filename": "title.episode.tsv.gz",
-            "object_prefix": OBJECT_PREFIX,
+            "object_prefix": Variable.get("imdb_object_prefix"),
         },
     )
 
@@ -153,7 +165,7 @@ with DAG(
         op_kwargs={
             'base_url': IMDB_DATASETS_BASE_URL, 
             "filename": "title.principals.tsv.gz",
-            "object_prefix": OBJECT_PREFIX,
+            "object_prefix": Variable.get("imdb_object_prefix"),
         },
     )
 
@@ -163,14 +175,20 @@ with DAG(
         op_kwargs={
             'base_url': IMDB_DATASETS_BASE_URL, 
             "filename": "title.ratings.tsv.gz",
-            "object_prefix": OBJECT_PREFIX,
+            "object_prefix": Variable.get("imdb_object_prefix"),
         },
     )
 
-    create_bucket >> upload_name_basics 
-    create_bucket >> upload_title_akas 
-    create_bucket >> upload_title_basics 
-    create_bucket >> upload_title_crew 
-    create_bucket >> upload_title_episode 
-    create_bucket >> upload_title_principals
-    create_bucket >> upload_title_ratings               
+    set_object_prefix_var = PythonOperator(
+        task_id="set_object_prefix_var", 
+        python_callable=set_object_prefix
+    )
+
+    create_bucket >> set_object_prefix_var
+    set_object_prefix_var >> upload_name_basics 
+    set_object_prefix_var >> upload_title_akas 
+    set_object_prefix_var >> upload_title_basics 
+    set_object_prefix_var >> upload_title_crew 
+    set_object_prefix_var >> upload_title_episode 
+    set_object_prefix_var >> upload_title_principals
+    set_object_prefix_var >> upload_title_ratings               

@@ -3,6 +3,7 @@ from airflow.models import Connection
 from airflow.models.dag import DAG
 from airflow.operators.python import PythonOperator
 from airflow.utils.dates import days_ago
+from airflow.models import Variable
 import logging
 
 logging.basicConfig(
@@ -10,6 +11,11 @@ logging.basicConfig(
     datefmt='%d-%b-%y %H:%M:%S', 
     level=logging.INFO
     )
+
+MINIO_ACCESS_KEY = Variable.get("minio_access_key")
+MINIO_SECRET_KEY = Variable.get("minio_secret_key")
+POSTGRES_USER = Variable.get("postgres_user")
+POSTGRES_PASSWORD = Variable.get("postgres_password")
 
 args = {
     'owner': 'imdb',
@@ -46,7 +52,7 @@ with DAG(
     default_args=args,
     start_date=days_ago(2),
     max_active_runs=1,
-    tags=['connections'],
+    tags=['connections', 'imdb'],
 ) as dag:
 
     create_minio_cnx = PythonOperator(
@@ -56,8 +62,8 @@ with DAG(
             "conn_id": "imdb_minio", 
             "conn_type": "s3",
             "host": "",
-            "login": "admin",
-            "password": "password",
+            "login": MINIO_ACCESS_KEY,
+            "password": MINIO_SECRET_KEY,
             "extra": "{\"host\": \"http://minio:9000\"}"
         },
     )
@@ -69,8 +75,8 @@ with DAG(
             "conn_id": "imdb_postgres", 
             "conn_type": "postgres",
             "host": "imdb_postgres",
-            "login": "admin",
-            "password": "password",
+            "login": POSTGRES_USER,
+            "password": POSTGRES_PASSWORD,
             "schema": "imdb",
             "port": 5432,
         },

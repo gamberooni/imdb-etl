@@ -11,7 +11,7 @@ with DAG(
     schedule_interval="@once",
     default_args=args,
     catchup=False,
-    tags=['postgres'],
+    tags=['postgres', 'imdb'],
 ) as dag:
 
     create_download_date_table = PostgresOperator(

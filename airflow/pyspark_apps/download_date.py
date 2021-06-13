@@ -1,10 +1,15 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType, StructField, ShortType
 import datetime
+import os 
+
+POSTGRES_HOST = os.environ['POSTGRES_HOST']
+POSTGRES_USER = os.environ['POSTGRES_USER']
+POSTGRES_PASSWORD = os.environ['POSTGRES_PASSWORD']
 
 def upload_download_date():
     spark = SparkSession.builder \
-        .appName("IMDb ETL Task - Download Date") \
+        .appName("download_date") \
         .getOrCreate()
 
     # create a df with year, month, day with today's date
@@ -22,12 +27,12 @@ def upload_download_date():
 
     # insert dataset download date into db
     dl_date_df.write.format('jdbc').options(
-        url='jdbc:postgresql://imdb_postgres:5432/imdb',
+        url=f'jdbc:postgresql://{POSTGRES_HOST}/imdb',
         driver='org.postgresql.Driver',
-        dbtable='dim_download_date',
-        user='admin',
-        password='password'
-        ).mode('append').save()    
+        dbtable='download_date',
+        user=POSTGRES_USER,
+        password=POSTGRES_PASSWORD
+      ).mode('append').save()
 
 def main():
     upload_download_date()
