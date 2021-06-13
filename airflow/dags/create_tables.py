@@ -14,11 +14,11 @@ with DAG(
     tags=['postgres'],
 ) as dag:
 
-    create_dim_download_date_table = PostgresOperator(
-        task_id="create_dim_download_date_table",
+    create_download_date_table = PostgresOperator(
+        task_id="create_download_date_table",
         postgres_conn_id="imdb_postgres",
         sql="""
-        CREATE TABLE IF NOT EXISTS dim_download_date (
+        CREATE TABLE IF NOT EXISTS download_date (
             id SERIAL PRIMARY KEY,
             year SMALLINT NOT NULL,
             month SMALLINT NOT NULL,
@@ -27,25 +27,26 @@ with DAG(
         """,
     )
 
-    create_dim_episodes_table = PostgresOperator(
-        task_id="create_dim_episodes_table",
+    create_episodes_table = PostgresOperator(
+        task_id="create_episodes_table",
         postgres_conn_id="imdb_postgres",
         sql="""
-        CREATE TABLE IF NOT EXISTS dim_episodes (
+        CREATE TABLE IF NOT EXISTS episodes (
             id SERIAL PRIMARY KEY,
+            title_id INT REFERENCES titles (id),
             season SMALLINT,
-            total_episodes SMALLINT,
-            tconst VARCHAR(20) NOT NULL
+            total_episodes SMALLINT
         );
         """,
     )    
 
-    create_dim_title_desc_table = PostgresOperator(
-        task_id="create_dim_title_desc_table",
+    create_titles_table = PostgresOperator(
+        task_id="create_titles_table",
         postgres_conn_id="imdb_postgres",
         sql="""
-        CREATE TABLE IF NOT EXISTS dim_title_desc (
+        CREATE TABLE IF NOT EXISTS titles (
             id SERIAL PRIMARY KEY,
+            download_date_id INT,
             tconst VARCHAR(20) UNIQUE NOT NULL,
             type VARCHAR(40),
             primary_title VARCHAR(800) NOT NULL,
@@ -63,11 +64,11 @@ with DAG(
         """,
     )    
 
-    create_dim_casts_table = PostgresOperator(
-        task_id="create_dim_casts_table",
+    create_casts_table = PostgresOperator(
+        task_id="create_casts_table",
         postgres_conn_id="imdb_postgres",
         sql="""
-        CREATE TABLE IF NOT EXISTS dim_casts (
+        CREATE TABLE IF NOT EXISTS casts (
             id SERIAL PRIMARY KEY,
             name VARCHAR(200) NOT NULL,
             age SMALLINT,
@@ -76,41 +77,12 @@ with DAG(
         );
         """,
     )        
- 
-    create_fact_titles_table = PostgresOperator(
-        task_id="create_fact_titles_table",
-        postgres_conn_id="imdb_postgres",
-        sql="""
-        CREATE TABLE IF NOT EXISTS fact_titles (
-            id SERIAL PRIMARY KEY,
-            download_date_id INT REFERENCES dim_download_date (id),
-            episode_id INT REFERENCES dim_episodes (id),
-            title_desc_id INT REFERENCES dim_title_desc (id),                   
-            daily_avRatingChange FLOAT(2),
-            weekly_avRatingChange FLOAT(2),
-            daily_numVotesChange INT,
-            weekly_numVotesChange INT
-        );
-        """,
-    )      
 
-    create_titles_crew_table = PostgresOperator(
-        task_id="create_titles_crew_table",
+    create_crew_table = PostgresOperator(
+        task_id="create_crew_table",
         postgres_conn_id="imdb_postgres",
         sql="""
-        CREATE TABLE IF NOT EXISTS titles_crew (
-            title_id INT,
-            crew_id INT REFERENCES dim_crew (id),
-            role VARCHAR(50)
-        );
-        """,
-    )                             
-
-    create_dim_crew_table = PostgresOperator(
-        task_id="create_dim_crew_table",
-        postgres_conn_id="imdb_postgres",
-        sql="""
-        CREATE TABLE IF NOT EXISTS dim_crew (
+        CREATE TABLE IF NOT EXISTS crew (
             id SERIAL PRIMARY KEY,
             name VARCHAR(200) NOT NULL,
             age SMALLINT,
@@ -125,24 +97,32 @@ with DAG(
         postgres_conn_id="imdb_postgres",
         sql="""
         CREATE TABLE IF NOT EXISTS titles_casts (
-            title_id INT,
-            cast_id INT REFERENCES dim_casts (id),
+            title_id INT REFERENCES titles (id),
+            cast_id INT REFERENCES casts (id),
             character VARCHAR(300)
         );
         """,
-    )                                                                  
+    )      
+
+    create_titles_crew_table = PostgresOperator(
+        task_id="create_titles_crew_table",
+        postgres_conn_id="imdb_postgres",
+        sql="""
+        CREATE TABLE IF NOT EXISTS titles_crew (
+            title_id INT REFERENCES titles (id),
+            crew_id INT REFERENCES crew (id),
+            role VARCHAR(50)
+        );
+        """,
+    )                             
 
     set_fkey = PostgresOperator(
         task_id="set_fkey",
         postgres_conn_id="imdb_postgres",
         sql="""
-        ALTER TABLE titles_casts 
-        ADD CONSTRAINT titles_casts_title_id_fkey FOREIGN KEY (title_id)
-        REFERENCES fact_titles (id);
-
-        ALTER TABLE titles_crew 
-        ADD CONSTRAINT titles_crew_title_id_fkey FOREIGN KEY (title_id)
-        REFERENCES fact_titles (id);
+        ALTER TABLE titles
+        ADD CONSTRAINT titles_download_date_id_fkey FOREIGN KEY (download_date_id)
+        REFERENCES download_date (id);
         """,
     )                  
 
@@ -162,11 +142,9 @@ with DAG(
         """,
     )   
 
-    drop_schema >> create_schema
-    create_schema >> create_dim_title_desc_table >> create_fact_titles_table
-    create_schema >> create_dim_download_date_table >> create_fact_titles_table
-    create_schema >> create_dim_episodes_table >> create_fact_titles_table 
-    create_schema >> create_dim_crew_table >> create_titles_crew_table >> create_fact_titles_table
-    create_schema >> create_dim_casts_table >> create_titles_casts_table >> create_fact_titles_table
-    
-    create_fact_titles_table >> set_fkey
+    drop_schema >> create_schema 
+    create_schema >> create_titles_table >> set_fkey
+    create_schema >> create_download_date_table >> set_fkey
+    create_titles_table >> create_episodes_table  
+    create_titles_table >> create_crew_table >> create_titles_crew_table 
+    create_titles_table >> create_casts_table >> create_titles_casts_table 
