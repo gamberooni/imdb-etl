@@ -22,7 +22,7 @@ A dashboard created using Redash
 > username: airflow
 >
 > password: airflow
-5. Go to Admin > Variables > Choose File > choose the config.json > Import Variables
+5. Go to Admin > Variables > Choose File > choose the `config.json` in `airflow` directory > Import Variables
 6. Trigger the DAGs that only need to run **ONCE** (create_connections and create_tables)
 7. Trigger the `upload_imdb_datasets_minio` DAG and the `imdb_etl` DAG will be triggered after the first one has finished. 
 8. Visit `Redash` at `localhost` and set up password
