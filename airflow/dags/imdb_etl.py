@@ -17,54 +17,54 @@ with DAG(
     tags=['spark', 'minio', 'postgres'],
 ) as dag:
 
-    dim_title_desc = SparkSubmitOperator(
-        task_id="dim_title_desc",
+    titles = SparkSubmitOperator(
+        task_id="titles",
         conn_id='imdb_spark',
-        application=f"{SPARK_HOME}/pyspark_apps/dim_title_desc.py", 
-        name='dim_title_desc',
+        application=f"{SPARK_HOME}/pyspark_apps/titles.py", 
+        name='titles',
         executor_memory='5g',
         driver_memory='2g',
         total_executor_cores=5,
     )
 
-    dim_episodes = SparkSubmitOperator(
-        task_id="dim_episodes",
+    episodes = SparkSubmitOperator(
+        task_id="episodes",
         conn_id='imdb_spark',
-        application=f"{SPARK_HOME}/pyspark_apps/dim_episodes.py", 
-        name='dim_episodes',
+        application=f"{SPARK_HOME}/pyspark_apps/episodes.py", 
+        name='episodes',
         executor_memory='5g',
         driver_memory='2g',
         total_executor_cores=5,
     )
 
-    dim_casts = SparkSubmitOperator(
-        task_id="dim_casts",
+    casts = SparkSubmitOperator(
+        task_id="casts",
         conn_id='imdb_spark',
-        application=f"{SPARK_HOME}/pyspark_apps/dim_casts.py", 
-        name='dim_casts',
+        application=f"{SPARK_HOME}/pyspark_apps/casts.py", 
+        name='casts',
         executor_memory='5g',
         driver_memory='2g',
         total_executor_cores=5,
     )
 
-    dim_crew = SparkSubmitOperator(
-        task_id="dim_crew",
+    crew = SparkSubmitOperator(
+        task_id="crew",
         conn_id='imdb_spark',
-        application=f"{SPARK_HOME}/pyspark_apps/dim_crew.py", 
-        name='dim_crew',
+        application=f"{SPARK_HOME}/pyspark_apps/crew.py", 
+        name='crew',
         executor_memory='5g',
         driver_memory='2g',
         total_executor_cores=5,
     )
 
-    dim_download_date = SparkSubmitOperator(
-        task_id="dim_download_date",
+    download_date = SparkSubmitOperator(
+        task_id="download_date",
         conn_id='imdb_spark',
-        application=f"{SPARK_HOME}/pyspark_apps/dim_download_date.py", 
-        name='dim_download_date',
+        application=f"{SPARK_HOME}/pyspark_apps/download_date.py", 
+        name='download_date',
         executor_memory='1g',
         driver_memory='1g',
         total_executor_cores=1,
     )
 
-    dim_download_date >> dim_title_desc >> dim_episodes >> dim_casts >> dim_crew
+    download_date >> titles >> episodes >> casts >> crew
