@@ -1,7 +1,11 @@
-# imdb-etl
+# README
+
+## Pipeline
+High level overview of the pipeline
+![imdb-etl1](./images/imdb-etl.png)
 
 ## Dashboard
-A dashboard created using Redash.
+A dashboard created using Redash
 ![redash-1](./images/redash-1.png)
 ![redash-2](./images/redash-2.png)
 
