@@ -13,10 +13,10 @@
 4. Go to Admin > Variables > Choose File > choose the config.json > Import Variables
 5. Trigger the DAGs that only need to run **ONCE** (create_connections and create_tables)
 6. Trigger the `upload_imdb_datasets_minio` DAG and the `imdb_etl` DAG will be triggered after the first one has finished. 
-7. Visit `Superset Web UI` at `localhost:8088` and login using 
+7. Visit `Grafana Web UI` at `localhost:3000` and login using 
 > username: admin
 >
-> password: admin
+> password: password
 
 ## Install Spark on local machine
 ```
@@ -66,15 +66,12 @@ os.environ['PYSPARK_SUBMIT_ARGS'] = f'--master {master} --driver-memory 4g --tot
 4. casts.ipynb
 5. crew.ipynb
 
-## docker-compose
-1. Create redash db
-> docker-compose run --rm redash create_db
-2. Create all the containers
-> docker-compose up -d 
-
-## Todo
+## Additional Remarks
+### Dashboards
 - Redash is not flexible - cannot export dashboard, cannot delete queries, cannot resize widgets
-- Try Superset. If Superset is not good enough then use back Grafana
+> If want to use Redash, before start docker-compose.yaml, do `docker-compose run --rm redash create_db`
+
+### Todo
 - Refactor code to reduce hardcoded stuffs
 - unit testing and data validation
 - metrics monitoring

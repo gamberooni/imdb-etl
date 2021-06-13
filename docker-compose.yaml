@@ -29,8 +29,6 @@ x-airflow-common:
     airflow_postgres:
       condition: service_healthy         
 
-
-
 services:
   minio:
     image: minio/minio:RELEASE.2021-03-04T00-53-13Z
@@ -50,6 +48,7 @@ services:
   imdb_postgres:
     image: postgres:12.6-alpine
     container_name: imdb_postgres
+    shm_size: 1g
     volumes:
       - postgres-volume:/var/lib/postgresql/data
     environment:
@@ -64,6 +63,22 @@ services:
     healthcheck:
       test: pg_isready -U admin -d imdb -h localhost -q
 
+  grafana:
+    image: grafana/grafana:8.0.1
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=password
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=magnesium-wordcloud-panel
+    volumes:
+      - grafana-volume:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning    
+    ports: 
+      - 3000:3000
+    networks:
+      - imdb-etl
+    restart: always
 
   # airflow
 
@@ -167,37 +182,37 @@ services:
 
   # spark
 
-  spark:
-    build:
-      dockerfile: Dockerfile
-      context: ./spark/master
-    environment:
-      - SPARK_RPC_AUTHENTICATION_ENABLED=no
-      - SPARK_RPC_ENCRYPTION_ENABLED=no
-      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-      - SPARK_SSL_ENABLED=no
-    ports:
-      - '8080:8080'
-      - '7077:7077' 
-    networks:
-    - imdb-etl 
+  # spark:
+  #   build:
+  #     dockerfile: Dockerfile
+  #     context: ./spark/master
+  #   environment:
+  #     - SPARK_RPC_AUTHENTICATION_ENABLED=no
+  #     - SPARK_RPC_ENCRYPTION_ENABLED=no
+  #     - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+  #     - SPARK_SSL_ENABLED=no
+  #   ports:
+  #     - '8080:8080'
+  #     - '7077:7077' 
+  #   networks:
+  #   - imdb-etl 
 
-  spark-worker:
-    build:
-      dockerfile: Dockerfile
-      context: ./spark/worker
-    environment:
-      - SPARK_MASTER_URL=spark://spark:7077
-      - SPARK_WORKER_MEMORY=8G
-      - SPARK_WORKER_CORES=6
-      - SPARK_RPC_AUTHENTICATION_ENABLED=no
-      - SPARK_RPC_ENCRYPTION_ENABLED=no
-      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-      - SPARK_SSL_ENABLED=no
-    ports:
-      - '8081:8081'
-    networks:
-    - imdb-etl 
+  # spark-worker:
+  #   build:
+  #     dockerfile: Dockerfile
+  #     context: ./spark/worker
+  #   environment:
+  #     - SPARK_MASTER_URL=spark://spark:7077
+  #     - SPARK_WORKER_MEMORY=8G
+  #     - SPARK_WORKER_CORES=6
+  #     - SPARK_RPC_AUTHENTICATION_ENABLED=no
+  #     - SPARK_RPC_ENCRYPTION_ENABLED=no
+  #     - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+  #     - SPARK_SSL_ENABLED=no
+  #   ports:
+  #     - '8081:8081'
+  #   networks:
+  #   - imdb-etl 
 
 networks:
   imdb-etl:
@@ -207,5 +222,6 @@ networks:
 volumes:
   minio-volume:
   postgres-volume:
+  grafana-volume:
   redash-postgres-volume:
   airflow-postgres-volume:
