@@ -1,0 +1,27 @@
+version: '3.5'
+
+services:
+  grafana:
+    image: grafana/grafana:8.0.1
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=password
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=magnesium-wordcloud-panel
+    volumes:
+      - grafana-volume:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning    
+    ports: 
+      - 3000:3000
+    networks:
+      - imdb-etl
+    restart: always
+
+networks:
+  imdb-etl:
+    external:
+      name: imdb-etl
+
+volumes:
+  grafana-volume:

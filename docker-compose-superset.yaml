@@ -1,0 +1,91 @@
+x-superset-image: &superset-image apache/superset:latest
+x-superset-depends-on: &superset-depends-on
+  - superset_db
+  - superset_redis
+x-superset-volumes: &superset-volumes
+  # /app/pythonpath_docker will be appended to the PYTHONPATH in the final container
+  - ./superset/docker:/app/docker
+  - superset-home-volume:/app/superset_home
+x-superset-environment: 
+  &superset-environment
+  DATABASE_DB: superset
+  DATABASE_HOST: superset_db
+  DATABASE_PASSWORD: superset
+  DATABASE_USER: superset
+  DATABASE_PORT: '5432'
+  DATABASE_DIALECT: postgresql
+  POSTGRES_DB: superset
+  POSTGRES_USER: superset
+  POSTGRES_PASSWORD: superset
+  PYTHONPATH: "/app/pythonpath:/app/docker/pythonpath_dev"
+  REDIS_HOST: superset_redis
+  REDIS_PORT: '6379'
+  FLASK_ENV: production
+  SUPERSET_ENV: production
+  SUPERSET_LOAD_EXAMPLES: 'false'
+  CYPRESS_CONFIG: 'false'
+  SUPERSET_PORT: '8088'
+
+version: "3"
+services:
+  superset_redis:
+    image: redis:latest
+    container_name: superset_redis
+    restart: always
+    volumes:
+      - superset-redis-volume:/data
+
+  superset_db:
+    environment: *superset-environment
+    image: postgres:12.6-alpine
+    container_name: superset_db
+    restart: always
+    volumes:
+      - superset-db-volume:/var/lib/postgresql/data
+
+  superset:
+    environment: *superset-environment
+    image: *superset-image
+    container_name: superset_app
+    command: ["/app/docker/docker-bootstrap.sh", "app-gunicorn"]
+    user: "root"
+    restart: always
+    ports:
+      - 8088:8088
+    depends_on: *superset-depends-on
+    volumes: *superset-volumes
+
+  superset-init:
+    image: *superset-image
+    container_name: superset_init
+    command: ["/app/docker/docker-init.sh"]
+    environment: *superset-environment
+    depends_on: *superset-depends-on
+    user: "root"
+    volumes: *superset-volumes
+
+  superset-worker:
+    image: *superset-image
+    container_name: superset_worker
+    command: ["/app/docker/docker-bootstrap.sh", "worker"]
+    environment: *superset-environment
+    restart: always
+    depends_on: *superset-depends-on
+    user: "root"
+    volumes: *superset-volumes
+
+  superset-worker-beat:
+    image: *superset-image
+    container_name: superset_worker_beat
+    command: ["/app/docker/docker-bootstrap.sh", "beat"]
+    environment: *superset-environment
+    restart: always
+    depends_on: *superset-depends-on
+    user: "root"
+    volumes: *superset-volumes
+
+volumes:
+  superset-docker-volume:
+  superset-home-volume:
+  superset-db-volume:
+  superset-redis-volume:
