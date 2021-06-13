@@ -41,7 +41,8 @@ source ~/.profile
 ```
 
 2. Jar Dependencies
-- Go to [Maven Repository](https://mvnrepository.com/) and download all these jar files. Then move all of them to `$SPARK_HOME/jars`. You need to delete the original `guava` jar file in `$SPARK_HOME/jars`.
+- Go to [Maven Repository](https://mvnrepository.com/) and download all these jar files. Then move all of them to `$SPARK_HOME/jars`. You need to delete the original `guava` jar file in `$SPARK_HOME/jars`
+
 | No. | Jar File            | Version       |
 | :-  | :-                  | :-            |
 | 1.  | hadoop-aws          | 3.2.0         |
@@ -66,11 +67,13 @@ os.environ['PYSPARK_SUBMIT_ARGS'] = f'--master {master} --driver-memory 4g --tot
 > **__NOTE:__** Visit `localhost:8080` and you can see the value of your machine hostname
 
 5. Order of execution for notebooks
+```
 1. download_date.ipynb
 2. titles.ipynb
 3. episodes.ipynb
 4. casts.ipynb
 5. crew.ipynb
+```
 
 ## Todo
 - Refactor code to reduce hardcoded stuffs
