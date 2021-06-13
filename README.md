@@ -4,17 +4,21 @@
 ![schema](./images/schema.png)
 
 ## Steps
-1. Download IMDb dataset from [here](https://datasets.imdbws.com/)
-2. Unzip and upload to MinIO
-3. Pyspark read file contents (.tsv files) from MinIO into dataframe
-4. Pyspark transformation
-5. Push transformed data into Postgres
-6. Create visualizations
+1. Change the values in `airflow/config.json` and `airflow/create_cnx.py`
+2. docker-compose up -d 
+3. Visit `Airflow Web UI` at `localhost:8082` and login using
+> username: airflow
+>
+> password: airflow
+4. Go to Admin > Variables > Choose File > choose the config.json > Import Variables
+5. Trigger the DAGs that only need to run **ONCE** (create_connections and create_tables)
+6. Trigger the `upload_imdb_datasets_minio` DAG and the `imdb_etl` DAG will be triggered after the first one has finished. 
+7. Visit `Superset Web UI` at `localhost:8088` and login using 
+> username: admin
+>
+> password: admin
 
-## Build Airflow image with Spark
-1. docker build -t custom/my-airflow ./airflow
-
-## Install Spark
+## Install Spark on local machine
 ```
 sudo apt update  
 sudo apt install default-jdk scala git -y
@@ -29,22 +33,8 @@ echo "export SPARK_MASTER_WEBUI_PORT=8080" >> ~/.profile
 source ~/.profile
 ```
 
-## Spark Standalone Cluster
-1. Start master and worker
-```
-$SPARK_HOME/sbin/start-master.sh
-$SPARK_HOME/sbin/start-worker.sh spark://zy-ubuntu:7077 
-```
-
-2. In the jupyter notebook, run the following lines to set number of cores and amount of memory to use
-```
-import os
-
-master = "spark://zy-ubuntu:7077"  
-os.environ['PYSPARK_SUBMIT_ARGS'] = f'--master {master} --driver-memory 4g --total-executor-cores 6 --executor-memory 8g --packages org.postgresql:postgresql:42.1.1 pyspark-shell'
-```
-
-## Spark read object from MinIO
+## Spark Jar Dependencies
+- Go to [Maven Repository](https://mvnrepository.com/) and download all these jar files. Then move all of them to `$SPARK_HOME/jars`. You need to delete the original `guava` jar file in `$SPARK_HOME/jars`.
 | No. | Jar File            | Version       |
 | :-  | :-                  | :-            |
 | 1.  | hadoop-aws          | 3.2.0         |
@@ -53,11 +43,28 @@ os.environ['PYSPARK_SUBMIT_ARGS'] = f'--master {master} --driver-memory 4g --tot
 | 4.  | jets3t              | 0.9.4         |
 | 5.  | postgresql          | 42.2.0        |
 
-## Order of execution
-1. dim_title_desc.ipynb
-2. dim_episodes.ipynb
-3. dim_casts.ipynb
-4. dim_crew.ipynb
+## Spark Standalone Cluster
+1. Start master and worker 
+```
+$SPARK_HOME/sbin/start-master.sh
+$SPARK_HOME/sbin/start-worker.sh spark://<machine_hostname>:7077 
+```
+
+2. In the jupyter notebook, run the following lines to set number of cores and amount of memory to use
+```
+import os
+
+master = "spark://<machine_hostname>:7077"  
+os.environ['PYSPARK_SUBMIT_ARGS'] = f'--master {master} --driver-memory 4g --total-executor-cores 6 --executor-memory 8g --packages org.postgresql:postgresql:42.1.1 pyspark-shell'
+```
+> **__NOTE:__** Visit `localhost:8080` and you can see the value of your machine hostname
+
+## Order of execution for notebooks
+1. download_date.ipynb
+2. titles.ipynb
+3. episodes.ipynb
+4. casts.ipynb
+5. crew.ipynb
 
 ## docker-compose
 1. Create redash db
@@ -65,13 +72,9 @@ os.environ['PYSPARK_SUBMIT_ARGS'] = f'--master {master} --driver-memory 4g --tot
 2. Create all the containers
 > docker-compose up -d 
 
-## Visit Airflow Web UI 
-- Go to localhost:8080 - username: airflow, password: airflow
-
 ## Todo
 - Redash is not flexible - cannot export dashboard, cannot delete queries, cannot resize widgets
 - Try Superset. If Superset is not good enough then use back Grafana
-- tofix.sql result is wrong. Maybe processing logic is wrong somewhere...
 - Refactor code to reduce hardcoded stuffs
 - unit testing and data validation
 - metrics monitoring
