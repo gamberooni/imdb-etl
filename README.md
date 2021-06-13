@@ -1,24 +1,31 @@
 # imdb-etl
 
+## Dashboard
+A dashboard created using Redash.
+![redash-1](./images/redash-1.png)
+![redash-2](./images/redash-2.png)
+
 ## Schema
 ![schema](./images/schema.png)
 
 ## Steps
 1. Change the values in `airflow/config.json` and `airflow/create_cnx.py`
-2. docker-compose up -d 
-3. Visit `Airflow Web UI` at `localhost:8082` and login using
+2. Initialize `Redash` database
+> docker-compose run --rm redash create_db
+3. Start all services using docker compose
+> docker-compose up -d 
+4. Visit `Airflow Web UI` at `localhost:8082` and login using
 > username: airflow
 >
 > password: airflow
-4. Go to Admin > Variables > Choose File > choose the config.json > Import Variables
-5. Trigger the DAGs that only need to run **ONCE** (create_connections and create_tables)
-6. Trigger the `upload_imdb_datasets_minio` DAG and the `imdb_etl` DAG will be triggered after the first one has finished. 
-7. Visit `Grafana Web UI` at `localhost:3000` and login using 
-> username: admin
->
-> password: password
+5. Go to Admin > Variables > Choose File > choose the config.json > Import Variables
+6. Trigger the DAGs that only need to run **ONCE** (create_connections and create_tables)
+7. Trigger the `upload_imdb_datasets_minio` DAG and the `imdb_etl` DAG will be triggered after the first one has finished. 
+8. Visit `Redash` at `localhost` and set up password
+9. Add data source, create queries using the sql statements in `dashboard-queries` folder and create a dashboard from those queries
 
-## Install Spark on local machine
+## Spark standalone on local machine when developing using notebooks
+1. Installation
 ```
 sudo apt update  
 sudo apt install default-jdk scala git -y
@@ -33,7 +40,7 @@ echo "export SPARK_MASTER_WEBUI_PORT=8080" >> ~/.profile
 source ~/.profile
 ```
 
-## Spark Jar Dependencies
+2. Jar Dependencies
 - Go to [Maven Repository](https://mvnrepository.com/) and download all these jar files. Then move all of them to `$SPARK_HOME/jars`. You need to delete the original `guava` jar file in `$SPARK_HOME/jars`.
 | No. | Jar File            | Version       |
 | :-  | :-                  | :-            |
@@ -43,14 +50,13 @@ source ~/.profile
 | 4.  | jets3t              | 0.9.4         |
 | 5.  | postgresql          | 42.2.0        |
 
-## Spark Standalone Cluster
-1. Start master and worker 
+3. Start master and worker 
 ```
 $SPARK_HOME/sbin/start-master.sh
 $SPARK_HOME/sbin/start-worker.sh spark://<machine_hostname>:7077 
 ```
 
-2. In the jupyter notebook, run the following lines to set number of cores and amount of memory to use
+4. In the jupyter notebooks, run the following lines to set number of cores and amount of memory to use
 ```
 import os
 
@@ -59,19 +65,14 @@ os.environ['PYSPARK_SUBMIT_ARGS'] = f'--master {master} --driver-memory 4g --tot
 ```
 > **__NOTE:__** Visit `localhost:8080` and you can see the value of your machine hostname
 
-## Order of execution for notebooks
+5. Order of execution for notebooks
 1. download_date.ipynb
 2. titles.ipynb
 3. episodes.ipynb
 4. casts.ipynb
 5. crew.ipynb
 
-## Additional Remarks
-### Dashboards
-- Redash is not flexible - cannot export dashboard, cannot delete queries, cannot resize widgets
-> If want to use Redash, before start docker-compose.yaml, do `docker-compose run --rm redash create_db`
-
-### Todo
+## Todo
 - Refactor code to reduce hardcoded stuffs
 - unit testing and data validation
 - metrics monitoring

@@ -29,6 +29,26 @@ x-airflow-common:
     airflow_postgres:
       condition: service_healthy         
 
+x-redash-service: 
+  &redash-service
+  image: redash/redash:8.0.0.b32245
+  depends_on:
+    - redash_postgres
+    - redash_redis
+  environment:
+    &redash-service-env
+    REDASH_HOST: http://redash:5000
+    REDASH_LOG_LEVEL: DEBUG
+    REDASH_REDIS_URL: redis://redash_redis:6379/0
+    REDASH_DATABASE_URL: postgresql://redash:password@redash_postgres/redash
+    REDASH_COOKIE_SECRET: 8EsdKSA3cjuaGSDkyMUPX5eF9zUqyjKk
+    REDASH_SECRET_KEY: oBOfnYWEg5jpR8k1yQcz7PXv9YlJBblR
+    PYTHONUNBUFFERED: '0'
+    REDASH_MAIL_DEFAULT_SENDER: redash@example.com
+    REDASH_MAIL_SERVER: redash_email
+    REDASH_MAIL_PORT: '1025'
+  restart: always
+
 services:
   minio:
     image: minio/minio:RELEASE.2021-03-04T00-53-13Z
@@ -63,22 +83,7 @@ services:
     healthcheck:
       test: pg_isready -U admin -d imdb -h localhost -q
 
-  grafana:
-    image: grafana/grafana:8.0.1
-    container_name: grafana
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=password
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_INSTALL_PLUGINS=magnesium-wordcloud-panel
-    volumes:
-      - grafana-volume:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning    
-    ports: 
-      - 3000:3000
-    networks:
-      - imdb-etl
-    restart: always
+
 
   # airflow
 
@@ -180,39 +185,131 @@ services:
     networks:
     - imdb-etl 
 
+  # redash
+
+  redash:
+    <<: *redash-service
+    container_name: redash
+    command: server
+    environment:
+      <<: *redash-service-env
+      REDASH_WEB_WORKERS: 4
+    networks:
+      - imdb-etl      
+
+  redash_scheduler:
+    <<: *redash-service
+    container_name: redash_scheduler
+    command: scheduler
+    environment:
+      <<: *redash-service-env      
+      QUEUES: "celery"
+      WORKERS_COUNT: 4
+    networks:
+      - imdb-etl      
+
+  redash_scheduled_worker:
+    <<: *redash-service
+    container_name: redash_scheduled_worker
+    command: worker
+    environment:
+      <<: *redash-service-env      
+      QUEUES: "scheduled_queries,schemas"
+      WORKERS_COUNT: 4
+    networks:
+      - imdb-etl      
+
+  redash_adhoc_worker:
+    <<: *redash-service
+    container_name: redash_adhoc_worker
+    command: worker
+    environment:
+      <<: *redash-service-env      
+      QUEUES: "queries"
+      WORKERS_COUNT: 6
+    networks:
+      - imdb-etl      
+
+  redash_redis:
+    image: redis:5.0-alpine
+    container_name: redash_redis
+    restart: always
+    networks:
+      - imdb-etl    
+
+  redash_postgres:
+    image: postgres:12.6-alpine
+    container_name: redash_postgres
+    environment:
+    volumes:
+      - redash-postgres-volume:/var/lib/postgresql/data
+    restart: always
+    environment: 
+      <<: *redash-service-env      
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: redash
+      POSTGRES_DB: redash
+    networks:
+      - imdb-etl      
+    healthcheck:
+      test: pg_isready -U redash -d redash -h localhost -q
+
+  redash_nginx:
+    container_name: redash_nginx
+    image: redash/nginx:latest
+    environment: 
+      <<: *redash-service-env
+    ports:
+      - "80:80"
+    depends_on:
+      - redash
+    restart: always
+    networks:
+      - imdb-etl    
+
+  redash_email:
+    image: maildev/maildev
+    container_name: redash_email
+    command: --outgoing-host 'smtp.gmail.com' --outgoing-secure --outgoing-user 'you@gmail.com' --outgoing-pass 'password'
+    ports:
+      - "1080:1080"
+    restart: always
+    networks:
+      - imdb-etl
+
   # spark
 
-  # spark:
-  #   build:
-  #     dockerfile: Dockerfile
-  #     context: ./spark/master
-  #   environment:
-  #     - SPARK_RPC_AUTHENTICATION_ENABLED=no
-  #     - SPARK_RPC_ENCRYPTION_ENABLED=no
-  #     - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-  #     - SPARK_SSL_ENABLED=no
-  #   ports:
-  #     - '8080:8080'
-  #     - '7077:7077' 
-  #   networks:
-  #   - imdb-etl 
+  spark:
+    build:
+      dockerfile: Dockerfile
+      context: ./spark/master
+    environment:
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+    ports:
+      - '8080:8080'
+      - '7077:7077' 
+    networks:
+    - imdb-etl 
 
-  # spark-worker:
-  #   build:
-  #     dockerfile: Dockerfile
-  #     context: ./spark/worker
-  #   environment:
-  #     - SPARK_MASTER_URL=spark://spark:7077
-  #     - SPARK_WORKER_MEMORY=8G
-  #     - SPARK_WORKER_CORES=6
-  #     - SPARK_RPC_AUTHENTICATION_ENABLED=no
-  #     - SPARK_RPC_ENCRYPTION_ENABLED=no
-  #     - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-  #     - SPARK_SSL_ENABLED=no
-  #   ports:
-  #     - '8081:8081'
-  #   networks:
-  #   - imdb-etl 
+  spark-worker:
+    build:
+      dockerfile: Dockerfile
+      context: ./spark/worker
+    environment:
+      - SPARK_MASTER_URL=spark://spark:7077
+      - SPARK_WORKER_MEMORY=8G
+      - SPARK_WORKER_CORES=6
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+    ports:
+      - '8081:8081'
+    networks:
+    - imdb-etl 
 
 networks:
   imdb-etl:
@@ -222,6 +319,5 @@ networks:
 volumes:
   minio-volume:
   postgres-volume:
-  grafana-volume:
   redash-postgres-volume:
   airflow-postgres-volume:
