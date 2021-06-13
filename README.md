@@ -68,5 +68,10 @@ os.environ['PYSPARK_SUBMIT_ARGS'] = f'--master {master} --driver-memory 4g --tot
 ## Visit Airflow Web UI 
 - Go to localhost:8080 - username: airflow, password: airflow
 
-- unit testing 
+## Todo
+- Redash is not flexible - cannot export dashboard, cannot delete queries, cannot resize widgets
+- Try Superset. If Superset is not good enough then use back Grafana
+- tofix.sql result is wrong. Maybe processing logic is wrong somewhere...
+- Refactor code to reduce hardcoded stuffs
+- unit testing and data validation
 - metrics monitoring
