@@ -7,6 +7,7 @@ After doing some casual browsing as well as data wrangling on the tsv files down
 ![schema](./images/schema.png)
 
 The datasets are downloaded from the datasets page and uploaded to MinIO. After that, I read the tsv files into dataframes and did some processing to fit the schema. The processed data is loaded into a Postgres database. A BI tool like Redash then pulls data out from the database to populate the [dashboard](#dashboard). I used Airflow to automate the ETL process. Following is the high-level overview of the pipeline.
+
 ![imdb-etl1](./images/imdb-etl.png)
 
 ## Dashboard
