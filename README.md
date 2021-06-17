@@ -3,7 +3,7 @@
 ## Introduction
 This is a self-learning project on ETL using Spark, Airflow, MinIO and Redash. The IMDb datasets can be found [here](https://datasets.imdbws.com/) and the corresponding documentation can be found [here](https://www.imdb.com/interfaces/). 
 
-After doing some casual browsing as well as data wrangling on the tsv files downloaded from the datasets page, I decided to design the schema as shown below:\
+After doing some casual browsing as well as data wrangling on the tsv files downloaded from the datasets page, I decided to design the schema as shown below:
 <p align="center">
   <img src="./images/schema.png" />
 </p>
