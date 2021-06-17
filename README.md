@@ -1,16 +1,26 @@
 # README
 
-## Pipeline
-High level overview of the pipeline
-![imdb-etl1](./images/imdb-etl.png)
+## Introduction
+This is a self-learning project on ETL using Spark, Airflow, MinIO and Redash. The IMDb datasets can be found [here](https://datasets.imdbws.com/) and the corresponding documentation can be found [here](https://www.imdb.com/interfaces/). 
+
+After doing some casual browsing as well as data wrangling on the tsv files downloaded from the datasets page, I decided to design the schema as shown below:
+<p align="center">
+  <img src="./images/schema.png" />
+</p>
+
+The datasets are downloaded from the datasets page and uploaded to MinIO. After that, I read the tsv files into dataframes and did some processing to fit the schema. The processed data is loaded into a Postgres database. A BI tool like Redash then pulls data out from the database to populate the [dashboard](#dashboard). I used Airflow to automate the ETL process. Following is the high-level overview of the pipeline:
+<p align="center">
+  <img src="./images/imdb-etl.png" />
+</p>
 
 ## Dashboard
 A dashboard created using Redash
-![redash-1](./images/redash-1.png)
-![redash-2](./images/redash-2.png)
-
-## Schema
-![schema](./images/schema.png)
+<p align="center">
+  <img src="./images/redash-1.png" />
+</p>
+<p align="center">
+  <img src="./images/redash-2.png" />
+</p>
 
 ## Steps
 1. Change the values in `airflow/config.json` and `airflow/create_cnx.py`
