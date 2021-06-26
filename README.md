@@ -89,7 +89,36 @@ os.environ['PYSPARK_SUBMIT_ARGS'] = f'--master {master} --driver-memory 4g --tot
 5. crew.ipynb
 ```
 
+## Great Expectations
+1. Install great_expectations
+```
+. venv/bin/activate
+pip install great_expectations
+```
+
+2. Initialize Great Expectations deployment
+```
+great_expectations init
+```
+
+3. Connect to local filesystem datasource (Pandas)
+```
+great_expectations datasource new
+```
+
+4. Place all the tsv files in the `great_expectations/data` directory (because I don't know how to use files from S3 yet...)
+
+5. Create expectation suite for each tsv file
+```
+$ great_expectations suite new
+
+Add the following in the `batch_kwargs` dictionary in order to read tsv file
+"reader_options": {"sep": "\t"}
+```
+
+6. Write table and column expectations in the Jupyter Notebook - expectations [glossary](https://docs.greatexpectations.io/en/latest/reference/glossary_of_expectations.html)
+
+
 ## Todo
 - Refactor code to reduce hardcoded stuffs
-- unit testing and data validation
 - metrics monitoring
