@@ -1,10 +1,10 @@
 {
-    "minio_host": "192.168.0.188:9000",
+    "minio_host": "192.168.0.191:9000",
     "minio_access_key": "admin",
     "minio_secret_key": "password",
     "imdb_bucket_name": "imdb",
     "imdb_datasets_base_url": "https://datasets.imdbws.com/",
-    "postgres_host": "192.168.0.188:5433",
+    "postgres_host": "192.168.0.191:5433",
     "postgres_user": "admin",
     "postgres_password": "password",
     "imdb_object_prefix": "placeholder"

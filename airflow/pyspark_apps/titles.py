@@ -59,7 +59,7 @@ def upload_dim_title_desc():
     title_basics_df = title_basics_df.withColumn('end_year', F.col('end_year').cast(ShortType()))
     title_basics_df = title_basics_df.withColumn('runtime_minutes', F.col('runtime_minutes').cast(ShortType()))
 
-    title_ratings_df = spark.read.csv("s3a://imdb/2021-06/06/title.ratings.tsv", sep=r'\t', header=True)  
+    title_ratings_df = spark.read.csv(f"s3a://{IMDB_BUCKET_NAME}/{IMDB_OBJECT_PREFIX}/title.ratings.tsv", sep=r'\t', header=True)  
     title_ratings_df = title_ratings_df.withColumnRenamed("averageRating", 'av_rating').withColumnRenamed('numVotes', 'num_votes')
     title_ratings_df = title_ratings_df.withColumn('av_rating', F.col('av_rating').cast(DecimalType(10, 1)))
     title_ratings_df = title_ratings_df.withColumn('num_votes', F.col('num_votes').cast(IntegerType()))
