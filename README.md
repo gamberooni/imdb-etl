@@ -188,8 +188,41 @@ great_expectations docs build --site-name s3_site
 > The `minio_site` Nginx service defined in the `docker-compose.yaml` will serve the data_docs site
 
 
-#### minio datasource
+#### Minio datasource
+1. Set bucket policy to download
+```
 mc policy set download minio/imdb
+```
+
+2. Edit `great_expectations.yml`
+```
+datasources:
+  s3_pandas:
+    class_name: PandasDatasource
+    boto3_options:
+      endpoint_url: 'http://localhost:9000'
+    batch_kwargs_generators:
+      pandas_s3_generator:
+        class_name: S3GlobReaderBatchKwargsGenerator
+        boto3_options:
+          endpoint_url: 'http://localhost:9000'
+        reader_options:
+          sep: "\t"
+        bucket: imdb # Only the bucket name here (i.e., no prefix)
+        assets:
+          imdb_data:
+            prefix: 2021-06/26/ # trailing slash is important
+            regex_filter: .*.tsv  # The regex filter will filter the results returned by S3 for the key and prefix to only those matching the regex
+    module_name: great_expectations.datasource
+    data_asset_type:
+      class_name: PandasDataset
+      module_name: great_expectations.dataset
+```
+
+3. Open Jupyter Notebook and write expectations
+```
+great_expectations suite scaffold s3_pandas
+```
 
 
 ## Todo

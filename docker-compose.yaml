@@ -288,6 +288,7 @@ services:
       - SPARK_RPC_ENCRYPTION_ENABLED=no
       - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
       - SPARK_SSL_ENABLED=no
+    restart: always
     ports:
       - '8080:8080'
       - '7077:7077' 
@@ -306,6 +307,7 @@ services:
       - SPARK_RPC_ENCRYPTION_ENABLED=no
       - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
       - SPARK_SSL_ENABLED=no
+    restart: always
     ports:
       - '8081:8081'
     networks:
@@ -316,6 +318,7 @@ services:
     container_name: minio_site
     volumes:
       - ./minio-static/nginx.conf:/etc/nginx/conf.d/default.conf
+    restart: always
     ports:
       - '82:80'
     networks:

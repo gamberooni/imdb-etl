@@ -26,16 +26,18 @@ datasources:
     class_name: PandasDatasource
   s3_pandas:
     class_name: PandasDatasource
+    boto3_options:
+      endpoint_url: 'http://localhost:9000'
     batch_kwargs_generators:
       pandas_s3_generator:
         class_name: S3GlobReaderBatchKwargsGenerator
+        boto3_options:
+          endpoint_url: 'http://localhost:9000'
         reader_options:
           sep: "\t"
         bucket: imdb # Only the bucket name here (i.e., no prefix)
         assets:
           imdb_data:
-            boto3_options:
-              endpoint_url: 'http://localhost:9000'
             prefix: 2021-06/26/ # trailing slash is important
             regex_filter: .*.tsv  # The regex filter will filter the results returned by S3 for the key and prefix to only those matching the regex
     module_name: great_expectations.datasource
