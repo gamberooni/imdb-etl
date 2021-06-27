@@ -24,6 +24,25 @@ datasources:
         base_directory: ./data
     module_name: great_expectations.datasource
     class_name: PandasDatasource
+  s3_pandas:
+    class_name: PandasDatasource
+    batch_kwargs_generators:
+      pandas_s3_generator:
+        class_name: S3GlobReaderBatchKwargsGenerator
+        reader_options:
+          sep: "\t"
+        bucket: imdb # Only the bucket name here (i.e., no prefix)
+        assets:
+          imdb_data:
+            boto3_options:
+              endpoint_url: 'http://localhost:9000'
+            prefix: 2021-06/26/ # trailing slash is important
+            regex_filter: .*.tsv  # The regex filter will filter the results returned by S3 for the key and prefix to only those matching the regex
+    module_name: great_expectations.datasource
+    data_asset_type:
+      class_name: PandasDataset
+      module_name: great_expectations.dataset
+
 
 # This config file supports variable substitution which enables: 1) keeping
 # secrets out of source control & 2) environment-based configuration changes
@@ -60,14 +79,24 @@ stores:
   expectations_store:
     class_name: ExpectationsStore
     store_backend:
-      class_name: TupleFilesystemStoreBackend
-      base_directory: expectations/
+#      class_name: TupleFilesystemStoreBackend
+#      base_directory: expectations/
+      boto3_options:
+        endpoint_url: 'http://localhost:9000'
+      class_name: TupleS3StoreBackend
+      bucket: great-expectations
+      prefix: expectations/
 
   validations_store:
     class_name: ValidationsStore
     store_backend:
-      class_name: TupleFilesystemStoreBackend
-      base_directory: uncommitted/validations/
+#      class_name: TupleFilesystemStoreBackend
+#      base_directory: uncommitted/validations/
+      boto3_options:
+        endpoint_url: 'http://localhost:9000'
+      class_name: TupleS3StoreBackend
+      bucket: great-expectations
+      prefix: validations/
 
   evaluation_parameter_store:
     # Evaluation Parameters enable dynamic expectations. Read more here:
@@ -77,9 +106,14 @@ stores:
   checkpoint_store:
     class_name: CheckpointStore
     store_backend:
-      class_name: TupleFilesystemStoreBackend
+#      class_name: TupleFilesystemStoreBackend
       suppress_store_backend_id: true
-      base_directory: checkpoints/
+#      base_directory: checkpoints/
+      boto3_options:
+        endpoint_url: 'http://localhost:9000'
+      class_name: TupleS3StoreBackend
+      bucket: great-expectations
+      prefix: checkpoints/
 
 expectations_store_name: expectations_store
 validations_store_name: validations_store
@@ -93,13 +127,24 @@ data_docs_sites:
   # profiles from the uncommitted directory. Read more at https://docs.greatexpectations.io/en/latest/reference/core_concepts/data_docs.html
   local_site:
     class_name: SiteBuilder
-    # set to false to hide how-to buttons in Data Docs
+    # set to false to hide how-to buttons in Data Docs#
     show_how_to_buttons: true
     store_backend:
       class_name: TupleFilesystemStoreBackend
       base_directory: uncommitted/data_docs/local_site/
     site_index_builder:
       class_name: DefaultSiteIndexBuilder
+
+  s3_site:  # this is a user-selected name - you may select your own
+    class_name: SiteBuilder
+    store_backend:
+      boto3_options:
+        endpoint_url: 'http://localhost:9000'
+      class_name: TupleS3StoreBackend
+      bucket: data-docs  
+    site_index_builder:
+      class_name: DefaultSiteIndexBuilder
+      show_cta_footer: true
 
 anonymous_usage_statistics:
   enabled: true

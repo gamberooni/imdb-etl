@@ -103,7 +103,21 @@ great_expectations init
 
 3. Connect to local filesystem datasource (Pandas)
 ```
-great_expectations datasource new
+$ great_expectations datasource new
+
+the datasources section will look something like this:
+datasources:
+  imdb_pandas:
+    data_asset_type:
+      module_name: great_expectations.dataset
+      class_name: PandasDataset
+    batch_kwargs_generators:
+      subdir_reader:
+        class_name: SubdirReaderBatchKwargsGenerator
+        base_directory: ./data
+    module_name: great_expectations.datasource
+    class_name: PandasDatasource
+
 ```
 
 4. Place all the tsv files in the `great_expectations/data` directory (because I don't know how to use files from S3 yet...)
@@ -117,6 +131,65 @@ Add the following in the `batch_kwargs` dictionary in order to read tsv file
 ```
 
 6. Write table and column expectations in the Jupyter Notebook - expectations [glossary](https://docs.greatexpectations.io/en/latest/reference/glossary_of_expectations.html)
+
+
+### Use S3 store for expectations, validations and data_docs site
+```
+sudo apt install awscli
+
+activate venv then
+$ pip install boto3==1.17.0 fsspec 's3fs<=0.4'
+
+set aws credentials
+$ aws configure
+```
+
+#### Expectations json files
+1. Create bucket
+2. Copy existing expectation json files to s3 bucket
+```
+$ aws s3 --endpoint-url http://localhost:9000 sync expectations s3://great-expectations/expectations
+```
+
+3. Verify ge is using s3 to store expectations
+```
+$ great_expectations suite list
+```
+
+#### Validations files
+1. Create bucket
+2. Copy validations files to s3 bucket
+```
+$ aws s3 --endpoint-url http://localhost:9000 sync uncommitted/validations s3://great-expectations/validations
+```
+
+3. Verify ge is using s3 to store validations
+```
+$ great_expectations store list
+```
+
+#### Minio data docs site
+1. Create a bucket called `data-docs`
+2. Use minio client to change bucket policy to `download`
+```
+$ docker run -it --entrypoint=/bin/sh minio/mc
+
+# change it to your IP address 
+$ mc alias set minio http://192.168.0.191:9000 admin password --api S3v4
+$ mc policy set download minio/data-docs
+```
+
+4. Build data_docs in the `data-docs` bucket
+```
+great_expectations docs build --site-name s3_site
+```
+
+5. Visit `localhost:82` to view the data docs
+> The `minio_site` Nginx service defined in the `docker-compose.yaml` will serve the data_docs site
+
+
+#### minio datasource
+mc policy set download minio/imdb
 
 
 ## Todo
