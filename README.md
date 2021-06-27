@@ -187,6 +187,7 @@ great_expectations docs build --site-name s3_site
 5. Visit `localhost:82` to view the data docs
 > The `minio_site` Nginx service defined in the `docker-compose.yaml` will serve the data_docs site
 
+![data-docs](./images/data-docs.gif)
 
 #### Minio datasource
 1. Set bucket policy to download
